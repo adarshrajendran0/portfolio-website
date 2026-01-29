@@ -14,7 +14,8 @@ const auth = firebase.auth();
 
 let isPrivateUnlocked = false; 
 let currentAdminTab = 'projects'; 
-let dataCache = { projects: [], experience: [], education: [], skills: [], references: [] };
+// CACHE includes 'settings' for Resume URL
+let dataCache = { projects: [], experience: [], education: [], skills: [], references: [], settings: [] };
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeScrollAnimations();
@@ -22,7 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeNavigation();
     checkVisitorLock();
     
-    ['projects', 'experience', 'education', 'skills', 'references'].forEach(col => fetchCollection(col));
+    // FETCH ALL COLLECTIONS (Including Settings)
+    ['projects', 'experience', 'education', 'skills', 'references', 'settings'].forEach(col => fetchCollection(col));
     
     auth.onAuthStateChanged((user) => {
         const loginSection = document.getElementById('adminLoginSection');
@@ -70,18 +72,37 @@ function fetchCollection(collectionName) {
             item.docId = doc.id;
             items.push(item);
         });
-        items.sort((a, b) => {
-            if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
-            return (b.id || 0) - (a.id || 0);
-        });
+        // Sort only if it's not settings
+        if(collectionName !== 'settings') {
+            items.sort((a, b) => {
+                if (a.order !== undefined && b.order !== undefined) return a.order - b.order;
+                return (b.id || 0) - (a.id || 0);
+            });
+        }
+        
         dataCache[collectionName] = items;
+        
         if (collectionName === 'projects') renderProjects();
         if (collectionName === 'experience') renderExperience();
         if (collectionName === 'education') renderEducation();
         if (collectionName === 'skills') renderSkills();
         if (collectionName === 'references') renderReferencesModal();
-        if(document.getElementById('adminModal').classList.contains('active')) renderAdminList();
+        if (collectionName === 'settings') renderSettings(); // Update Resume
+        
+        if(document.getElementById('adminModal').classList.contains('active') && currentAdminTab !== 'settings') renderAdminList();
     });
+}
+
+// RENDER RESUME BUTTON
+function renderSettings() {
+    const config = dataCache.settings.find(item => item.docId === 'config');
+    if (config && config.resumeUrl) {
+        const btn = document.getElementById('resumeBtn');
+        if(btn) {
+            btn.href = config.resumeUrl;
+            btn.target = "_blank"; // Open in new tab
+        }
+    }
 }
 
 function renderProjects() {
@@ -149,7 +170,24 @@ function switchAdminTab(tab) {
     document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
     const btn = document.querySelector(`button[onclick="switchAdminTab('${tab}')"]`);
     if(btn) btn.classList.add('active');
-    renderAdminList();
+    
+    // NEW: SETTINGS TAB LOGIC
+    if(tab === 'settings') {
+        const existingConfig = dataCache.settings.find(i => i.docId === 'config');
+        document.getElementById('adminList').innerHTML = ''; 
+        document.getElementById('addItemForm').style.display = 'block';
+        document.getElementById('editItemId').value = 'config'; 
+        document.getElementById('dynamicFormFields').innerHTML = generateFormFields('settings', existingConfig || {});
+        // Hide add button
+        const addBtn = document.querySelector('.admin-actions button');
+        if(addBtn) addBtn.style.display = 'none';
+    } else {
+        // Normal Tabs
+        document.getElementById('addItemForm').style.display = 'none';
+        const addBtn = document.querySelector('.admin-actions button');
+        if(addBtn) addBtn.style.display = 'inline-flex';
+        renderAdminList();
+    }
 }
 
 function renderAdminList() {
@@ -166,27 +204,47 @@ function renderAdminList() {
 
 function showAddItemForm() { document.getElementById('addItemForm').style.display = 'block'; document.getElementById('editItemId').value = ''; document.getElementById('dynamicFormFields').innerHTML = generateFormFields(currentAdminTab); }
 function editItem(docId) { const item = dataCache[currentAdminTab].find(i => i.docId === docId); if (!item) return; document.getElementById('addItemForm').style.display = 'block'; document.getElementById('editItemId').value = docId; document.getElementById('dynamicFormFields').innerHTML = generateFormFields(currentAdminTab, item); }
+
 function generateFormFields(type, data = {}) {
     const v = (key) => data[key] || '';
+    
+    // NEW: Settings Form Field
+    if (type === 'settings') {
+        return `<p style="margin-bottom:10px; color:#666;">Paste your Resume Link (from GitHub/Drive)</p>
+                <input type="text" id="inp_resumeUrl" placeholder="Resume URL (https://...)" value="${v('resumeUrl')}">`;
+    }
+
     if (type === 'projects') return `<input type="text" id="inp_title" placeholder="Title" value="${v('title')}"><input type="text" id="inp_desc" placeholder="Desc" value="${v('description')}"><textarea id="inp_details" placeholder="Details" rows="3">${v('details')}</textarea><input type="text" id="inp_link" placeholder="Link" value="${v('link')}"><input type="text" id="inp_tags" placeholder="Tags" value="${(data.tags||[]).join(',')}"><select id="inp_visibility"><option value="public">Public</option><option value="private">Private</option></select><label><input type="checkbox" id="inp_highlight" ${v('highlight')?'checked':''}> Highlight</label>`;
     if (type === 'experience') return `<input type="text" id="inp_role" placeholder="Role" value="${v('role')}"><input type="text" id="inp_company" placeholder="Company" value="${v('company')}"><input type="text" id="inp_period" placeholder="Period" value="${v('period')}"><textarea id="inp_highlights" placeholder="Highlights" rows="5">${(data.highlights||[]).join('\n')}</textarea>`;
     if (type === 'education') return `<input type="text" id="inp_degree" placeholder="Degree" value="${v('degree')}"><input type="text" id="inp_field" placeholder="Field" value="${v('field')}"><input type="text" id="inp_institution" placeholder="Inst" value="${v('institution')}"><input type="text" id="inp_year" placeholder="Year" value="${v('year')}">`;
     if (type === 'skills') return `<input type="text" id="inp_category" placeholder="Cat" value="${v('category')}"><input type="text" id="inp_icon" placeholder="Icon" value="${v('icon')}"><textarea id="inp_items" placeholder="Items" rows="3">${(data.items||[]).join(',')}</textarea>`;
     if (type === 'references') return `<input type="text" id="inp_name" placeholder="Name" value="${v('name')}"><input type="text" id="inp_role" placeholder="Role" value="${v('role')}"><input type="text" id="inp_company" placeholder="Company" value="${v('company')}"><input type="text" id="inp_relation" placeholder="Relation" value="${v('relation')}"><input type="text" id="inp_image" placeholder="Image URL (Drive/GitHub)" value="${v('image')}"><textarea id="inp_quote" placeholder="Quote" rows="2">${v('quote')}</textarea><input type="text" id="inp_linkedin" placeholder="LinkedIn" value="${v('linkedin')}"><input type="text" id="inp_email" placeholder="Email" value="${v('email')}">`;
 }
+
 function saveItemToFirebase() {
     const docId = document.getElementById('editItemId').value;
     const currentItems = dataCache[currentAdminTab] || [];
     const maxOrder = currentItems.reduce((max, item) => Math.max(max, item.order || 0), 0);
     let data = { id: Date.now() }; if(!docId) data.order = maxOrder + 1;
+    
+    // NEW: Settings Save Logic
+    if (currentAdminTab === 'settings') {
+        const resumeUrl = document.getElementById('inp_resumeUrl').value;
+        db.collection('settings').doc('config').set({ resumeUrl: resumeUrl })
+          .then(() => { alert("Resume Link Updated!"); });
+        return;
+    }
+
     if (currentAdminTab === 'projects') { data.title = document.getElementById('inp_title').value; data.description = document.getElementById('inp_desc').value; data.details = document.getElementById('inp_details').value; data.link = document.getElementById('inp_link').value; data.tags = document.getElementById('inp_tags').value.split(','); data.visibility = document.getElementById('inp_visibility').value; data.highlight = document.getElementById('inp_highlight').checked; data.status='Active'; data.icon='work'; }
     else if (currentAdminTab === 'experience') { data.role = document.getElementById('inp_role').value; data.company = document.getElementById('inp_company').value; data.period = document.getElementById('inp_period').value; data.highlights = document.getElementById('inp_highlights').value.split('\n'); }
     else if (currentAdminTab === 'education') { data.degree = document.getElementById('inp_degree').value; data.field = document.getElementById('inp_field').value; data.institution = document.getElementById('inp_institution').value; data.year = document.getElementById('inp_year').value; }
     else if (currentAdminTab === 'skills') { data.category = document.getElementById('inp_category').value; data.icon = document.getElementById('inp_icon').value; data.items = document.getElementById('inp_items').value.split(','); }
     else if (currentAdminTab === 'references') { data.name = document.getElementById('inp_name').value; data.role = document.getElementById('inp_role').value; data.company = document.getElementById('inp_company').value; data.relation = document.getElementById('inp_relation').value; data.image = document.getElementById('inp_image').value; data.quote = document.getElementById('inp_quote').value; data.linkedin = document.getElementById('inp_linkedin').value; data.email = document.getElementById('inp_email').value; }
+    
     if (docId) db.collection(currentAdminTab).doc(docId).update(data).then(() => { alert("Updated!"); document.getElementById('addItemForm').style.display = 'none'; });
     else db.collection(currentAdminTab).add(data).then(() => { alert("Created!"); document.getElementById('addItemForm').style.display = 'none'; });
 }
+
 function deleteItem(docId) { if(confirm("Delete?")) db.collection(currentAdminTab).doc(docId).delete(); }
 function cancelAddItem() { document.getElementById('addItemForm').style.display = 'none'; }
 async function moveItem(docId, dir) { const items = [...dataCache[currentAdminTab]]; const idx = items.findIndex(i=>i.docId===docId); if(idx===-1)return; const tIdx=idx+dir; if(tIdx<0||tIdx>=items.length)return; [items[idx], items[tIdx]] = [items[tIdx], items[idx]]; const batch=db.batch(); items.forEach((it,i)=>batch.update(db.collection(currentAdminTab).doc(it.docId),{order:i+1})); await batch.commit(); }
@@ -205,5 +263,42 @@ function showAdminPanel() { openModal('adminModal'); }
 function closeAdminPanel() { closeModal('adminModal'); }
 function verifyVisitorPassword() { if(document.getElementById('privatePassword').value==="mechanical2025") { isPrivateUnlocked=true; showPrivateProjects(); } else alert("Wrong Password"); }
 function handlePasswordEnter(e) { if(e.key==='Enter') verifyVisitorPassword(); }
+
+// ==========================================
+//  CRITICAL: ADMIN LOGIN FUNCTION
+// ==========================================
+function adminLogin() {
+    const emailInput = document.querySelector('#adminLoginSection input[type="email"]');
+    const passInput = document.querySelector('#adminLoginSection input[type="password"]');
+    
+    if (!emailInput || !passInput) {
+        console.error("Login inputs not found in HTML!");
+        return;
+    }
+
+    const email = emailInput.value;
+    const password = passInput.value;
+
+    if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+    }
+
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            console.log("Logged in:", userCredential.user.email);
+            // authStateChanged listener handles the rest
+        })
+        .catch((error) => {
+            console.error("Login Error:", error);
+            if (error.code === 'auth/wrong-password') {
+                alert("Incorrect password.");
+            } else if (error.code === 'auth/user-not-found') {
+                alert("No admin account found with this email.");
+            } else {
+                alert("Login Failed: " + error.message);
+            }
+        });
+}
 
 window.addEventListener('click', e => { if(e.target===document.getElementById('privateProjectsModal')) closePrivateProjects(); if(e.target===document.getElementById('adminModal')) closeAdminPanel(); if(e.target===document.getElementById('projectDetailModal')) closeProjectDetails(); if(e.target===document.getElementById('referencesModal')) closeReferences(); });
