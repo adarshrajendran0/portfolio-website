@@ -100,8 +100,7 @@ function renderSettings() {
         const btn = document.getElementById('resumeBtn');
         if(btn) {
             btn.href = config.resumeUrl;
-            btn.target = "_blank"; // Open in new tab
-        }
+                    }
     }
 }
 
