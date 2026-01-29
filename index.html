@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adarsh R - Mechanical Engineer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-text">ADARSH R</span>
+                <span class="logo-subtitle">Mechanical Engineer</span>
+            </div>
+            <div class="nav-links">
+                <a href="#home" class="nav-link active">Home</a>
+                <a href="#experience" class="nav-link">Experience</a>
+                <a href="#projects" class="nav-link">Projects</a>
+                <a href="#skills" class="nav-link">Skills</a>
+                <a href="#contact" class="nav-link">Contact</a>
+                <button class="nav-link-special" onclick="showPrivateProjects()">
+                    <span class="material-symbols-rounded">lock</span>
+                    Private
+                </button>
+            </div>
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                <span class="material-symbols-rounded">menu</span>
+            </button>
+        </div>
+    </nav>
+
+    <section id="home" class="hero-section" style="padding-top: 140px;">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="material-symbols-rounded">engineering</span>
+                    <span>Available for Opportunities</span>
+                </div>
+                <h1 class="hero-title">
+                    Engineering at the<br>
+                    <span class="highlight-text">Intersection of Innovation</span>
+                </h1>
+                <p class="hero-description">
+                    Mechanical Engineer specializing in design, controls, simulation, and testing. 
+                    Trusted for engineering judgment in early-stage product development and 
+                    interdisciplinary R&D environments.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">2+</div>
+                        <div class="stat-label">Years Experience</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">AIR 2</div>
+                        <div class="stat-label">CFD Competition</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">10+</div>
+                        <div class="stat-label">Technical Projects</div>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <a href="#contact" class="btn-primary">
+                        Get in Touch
+                        <span class="material-symbols-rounded">arrow_forward</span>
+                    </a>
+                    <a href="assets/Resume.pdf" download="Adarsh_R_Resume.pdf" class="btn-secondary">
+                        Download Resume
+                        <span class="material-symbols-rounded">download</span>
+                    </a>
+                    <a href="#projects" class="btn-secondary">
+                        View Projects
+                        <span class="material-symbols-rounded">arrow_downward</span>
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="visual-card card-1"><span class="material-symbols-rounded">precision_manufacturing</span><span>CFD & Simulation</span></div>
+                <div class="visual-card card-2"><span class="material-symbols-rounded">settings</span><span>System Design</span></div>
+                <div class="visual-card card-3"><span class="material-symbols-rounded">analytics</span><span>FEA Analysis</span></div>
+                <div class="visual-card card-4"><span class="material-symbols-rounded">code</span><span>Automation</span></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="experience" class="experience-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-label">Professional Journey</span>
+                <h2 class="section-title">Experience & Expertise</h2>
+            </div>
+            <div class="timeline" id="experienceList">
+                <div style="text-align: center; color: var(--on-surface-variant);">Loading experience...</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" class="projects-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-label">Portfolio</span>
+                <h2 class="section-title">Featured Projects</h2>
+            </div>
+            <div class="projects-grid" id="publicProjects">
+                <div style="text-align: center; grid-column: 1/-1;">Loading projects...</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="skills" class="skills-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-label">Technical Expertise</span>
+                <h2 class="section-title">Skills & Tools</h2>
+            </div>
+            <div class="skills-grid" id="skillsList">
+                <div style="text-align: center; grid-column: 1/-1;">Loading skills...</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="education" class="education-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-label">Academic Background</span>
+                <h2 class="section-title">Education</h2>
+            </div>
+            <div class="education-grid" id="educationList">
+                <div style="text-align: center; grid-column: 1/-1;">Loading education...</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact-section">
+        <div class="section-container">
+            <div class="contact-content">
+                <div class="contact-info">
+                    <span class="section-label">Get in Touch</span>
+                    <h2 class="section-title">Let's Connect</h2>
+                    <p class="contact-description">
+                        Open to discussing opportunities in mechanical engineering, R&D, 
+                        simulation, and product development.
+                    </p>
+
+                    <div class="references-trigger" onclick="showReferences()" data-animate>
+                        <div class="trigger-icon">
+                            <span class="material-symbols-rounded">groups</span>
+                        </div>
+                        <div class="trigger-text">
+                            <h3>Professional References</h3>
+                            <p>Vouched for by professors, mentors, and colleagues.</p>
+                        </div>
+                        <div class="trigger-action">
+                            <span class="material-symbols-rounded">arrow_forward</span>
+                        </div>
+                    </div>
+
+                    <div class="contact-methods">
+                        <a href="mailto:adarshrajendran0@gmail.com" class="contact-method">
+                            <span class="material-symbols-rounded">mail</span>
+                            <div><strong>Email</strong><span>adarshrajendran0@gmail.com</span></div>
+                        </a>
+                        <a href="tel:+919633794330" class="contact-method">
+                            <span class="material-symbols-rounded">phone</span>
+                            <div><strong>Phone</strong><span>+91 9633794330</span></div>
+                        </a>
+                        <a href="https://linkedin.com/in/adarshrajendran0" target="_blank" class="contact-method">
+                            <span class="material-symbols-rounded">work</span>
+                            <div><strong>LinkedIn</strong><span>linkedin.com/in/adarshrajendran0</span></div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 Adarsh R. All rights reserved.</p>
+                <button onclick="showAdminPanel()" class="admin-link">Admin Login</button>
+            </div>
+        </div>
+    </footer>
+
+    <div id="projectDetailModal" class="modal">
+        <div class="modal-content detail-modal">
+            <div class="modal-header">
+                <div class="detail-header-left">
+                    <span class="material-symbols-rounded" id="detailIcon">work</span>
+                    <h2 id="detailTitle">Project Title</h2>
+                </div>
+                <button onclick="closeProjectDetails()" class="close-btn"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="detail-body">
+                <div class="detail-tags" id="detailTags"></div>
+                <p class="detail-description" id="detailDescription"></p>
+                <div id="detailLinkContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="referencesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>References & Mentors</h2>
+                <button onclick="closeReferences()" class="close-btn"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div class="references-grid" id="referencesListModal">
+                    <div style="text-align: center;">Loading references...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="privateProjectsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Private Projects</h2>
+                <button onclick="closePrivateProjects()" class="close-btn"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div id="passwordSection" class="password-section">
+                <div class="lock-icon"><span class="material-symbols-rounded">lock</span></div>
+                <p>These projects are confidential.</p>
+                <input type="password" id="privatePassword" placeholder="Enter access password" onkeypress="handlePasswordEnter(event)">
+                <button onclick="verifyVisitorPassword()" class="btn-primary">Unlock</button>
+            </div>
+            <div id="privateProjectsContent" class="private-projects-content" style="display: none;">
+                <div class="projects-grid" id="privateProjects">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminModal" class="modal">
+        <div class="modal-content admin-modal">
+            <div class="modal-header">
+                <h2>Admin Dashboard</h2>
+                <button onclick="closeAdminPanel()" class="close-btn"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            
+            <div id="adminLoginSection" class="admin-login-section">
+                <p>Login with Firebase Account</p>
+                <input type="email" id="adminEmail" placeholder="Email (adarsh...)" style="margin-bottom: 0.5rem;">
+                <input type="password" id="adminAuthPassword" placeholder="Password">
+                <button onclick="loginToFirebase()" class="btn-primary" style="margin-top: 1rem;">Login</button>
+            </div>
+
+            <div id="adminContent" class="admin-content" style="display: none;">
+                <div class="admin-tabs">
+                    <button class="admin-tab active" onclick="switchAdminTab('projects')">Projects</button>
+                    <button class="admin-tab" onclick="switchAdminTab('experience')">Experience</button>
+                    <button class="admin-tab" onclick="switchAdminTab('education')">Education</button>
+                    <button class="admin-tab" onclick="switchAdminTab('skills')">Skills</button>
+                    <button class="admin-tab" onclick="switchAdminTab('references')">References</button> </div>
+
+                <div class="admin-actions" style="margin-top: 1rem; display: flex; justify-content: space-between;">
+                    <button onclick="showAddItemForm()" class="btn-primary">
+                        <span class="material-symbols-rounded">add</span> <span id="addBtnText">Add Project</span>
+                    </button>
+                    <div>
+                        <button onclick="migrateDataToFirebase()" class="btn-secondary" style="font-size: 0.8rem; margin-right: 1rem;">
+                            <span class="material-symbols-rounded">upload</span> Migration Tool
+                        </button>
+                        <button onclick="logoutFirebase()" class="btn-secondary" style="color: var(--error); border-color: var(--error);">Logout</button>
+                    </div>
+                </div>
+
+                <div id="addItemForm" class="project-form" style="display: none;">
+                    <h3 id="formTitle">Add Item</h3>
+                    <input type="hidden" id="editItemId">
+                    <div id="dynamicFormFields"></div>
+                    <div class="form-actions">
+                        <button onclick="saveItemToFirebase()" class="btn-primary">Save</button>
+                        <button onclick="cancelAddItem()" class="btn-secondary">Cancel</button>
+                    </div>
+                </div>
+
+                <div id="adminList" class="projects-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
