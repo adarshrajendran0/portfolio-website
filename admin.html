@@ -13,6 +13,7 @@
         rel="stylesheet">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
 
     <style>
         /* Admin Specific Overrides */
@@ -146,6 +147,74 @@
             border-color: #ffcdd2;
             color: #c62828;
         }
+
+        /* Modal Styles */
+        .admin-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .admin-modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .admin-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            color: #666;
+        }
+
+        .btn-icon:hover {
+            background: #eee;
+        }
+
+        .admin-modal-actions {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
     </style>
 </head>
 
@@ -195,15 +264,45 @@
             <div id="adminList"></div>
 
             <!-- Add/Edit Form -->
-            <div id="addItemForm"
-                style="display:none; background: #fff; padding: 2rem; border-radius: 12px; margin-top: 2rem; border: 2px solid var(--surface-variant); box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
-                <h3 style="margin-bottom: 1.5rem; color: var(--primary);">Editor</h3>
-                <input type="hidden" id="editItemId">
-                <div id="dynamicFormFields"></div>
+            <!-- Add/Edit Modal (Replaces inline form) -->
+            <div id="adminModal" class="admin-modal-overlay" style="display: none;">
+                <div class="admin-modal-content">
+                    <div class="admin-modal-header">
+                        <h3 style="margin:0; color:var(--primary);">Editor</h3>
+                        <button class="btn-icon" onclick="cancelAddItem()">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </div>
 
-                <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button class="btn-secondary" onclick="cancelAddItem()">Cancel</button>
-                    <button class="btn-primary" onclick="saveItemToFirebase()">Save Changes</button>
+                    <div id="addItemForm">
+                        <input type="hidden" id="editItemId">
+                        <div id="dynamicFormFields" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                        </div>
+
+                        <div class="admin-modal-actions">
+                            <button class="btn-secondary" onclick="cancelAddItem()">Cancel</button>
+                            <button class="btn-primary" onclick="saveItemToFirebase()">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cropper Modal -->
+            <div id="cropperModal" class="admin-modal-overlay" style="display: none; z-index: 1100;">
+                <div class="admin-modal-content" style="max-width: 800px; width: 95%;">
+                    <div class="admin-modal-header">
+                        <h3 style="margin:0;">Crop Image</h3>
+                        <button class="btn-icon" onclick="cancelCrop()">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </div>
+                    <div style="height: 400px; background: #333; margin-bottom: 1rem;">
+                        <img id="cropperImage" src="" style="max-width: 100%; display: block;">
+                    </div>
+                    <div class="admin-modal-actions">
+                        <button class="btn-secondary" onclick="cancelCrop()">Cancel</button>
+                        <button class="btn-primary" onclick="finishCrop()">Crop & Use</button>
+                    </div>
                 </div>
             </div>
 
@@ -214,6 +313,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <!-- Note: Storage SDK was not in original, but instructions mentioned handleImageUpload logic which typically uses it, 
          however original script.js didn't have it either. I'll include it just in case for future. -->
 

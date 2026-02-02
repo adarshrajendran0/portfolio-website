@@ -50,8 +50,15 @@ function closeModal(modalId) {
 function convertGoogleDriveLink(url) {
     if (!url) return '';
     if (!url.includes('drive.google.com')) return url;
-    const idMatch = url.match(/\/d\/(.+?)\//);
+
+    // Handle /d/VERSION
+    let idMatch = url.match(/\/d\/(.+?)\//);
     if (idMatch && idMatch[1]) return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+
+    // Handle id=VERSION
+    idMatch = url.match(/id=([^&]+)/);
+    if (idMatch && idMatch[1]) return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+
     return url;
 }
 
@@ -88,9 +95,30 @@ function renderSettings() {
     if (config && config.resumeUrl) {
         const btn = document.getElementById('resumeBtn');
         if (btn) {
-            btn.href = config.resumeUrl;
+            let url = config.resumeUrl;
+            let downloadUrl = url;
+
+            // Try to convert to direct download if it's a Drive link
+            if (url.includes('drive.google.com')) {
+                const idMatch = url.match(/\/d\/(.+?)\//);
+                if (idMatch && idMatch[1]) {
+                    downloadUrl = `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
+                }
+            }
+
+            btn.href = downloadUrl;
+            btn.target = "_blank";
+            btn.style.cursor = 'pointer';
+
+            // Remove any previous click handlers that might prevent default
+            btn.onclick = null;
         }
     }
+}
+
+// Function openResumeModal is no longer needed but kept safe or removed if preferred.
+function openResumeModal(url) {
+    // Deprecated in favor of direct download
 }
 
 function renderProjects() {
@@ -159,7 +187,76 @@ function initializeSmoothScroll() { document.querySelectorAll('a[href^="#"]').fo
 function initializeScrollAnimations() { const obs = new IntersectionObserver(e => e.forEach(en => { if (en.isIntersecting) { en.target.style.opacity = '1'; en.target.style.transform = 'translateY(0)'; } })); document.querySelectorAll('[data-animate]').forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(30px)'; el.style.transition = 'opacity 0.6s ease, transform 0.6s ease'; obs.observe(el); }); }
 function toggleMobileMenu() { document.querySelector('.nav-links').classList.toggle('active'); }
 function checkVisitorLock() { }
-function openProjectDetails(p) { const m = document.getElementById('projectDetailModal'); document.getElementById('detailTitle').textContent = p.title; document.getElementById('detailIcon').textContent = p.icon || 'work'; document.getElementById('detailDescription').textContent = p.details || p.description; document.getElementById('detailTags').innerHTML = (p.tags || []).map(t => `<span class="project-tag">${t}</span>`).join(''); document.getElementById('detailLinkContainer').innerHTML = `<a href="${p.link || '#'}" target="_blank" class="btn-primary" style="width:100%;justify-content:center;">More Info <span class="material-symbols-rounded">open_in_new</span></a>`; openModal('projectDetailModal'); }
+
+// CAROUSEL LOGIC
+let currentSlideIndex = 0;
+let currentProjectImages = [];
+
+function openProjectDetails(p) {
+    const m = document.getElementById('projectDetailModal');
+    document.getElementById('detailTitle').textContent = p.title;
+    document.getElementById('detailIcon').textContent = p.icon || 'work';
+    document.getElementById('detailDescription').textContent = p.details || p.description;
+    document.getElementById('detailTags').innerHTML = (p.tags || []).map(t => `<span class="project-tag">${t}</span>`).join('');
+    document.getElementById('detailLinkContainer').innerHTML = `<a href="${p.link || '#'}" target="_blank" class="btn-primary" style="width:100%;justify-content:center;">More Info <span class="material-symbols-rounded">open_in_new</span></a>`;
+
+    // Carousel Setup
+    const carouselContainer = document.getElementById('carouselContainer');
+    carouselContainer.innerHTML = '';
+
+    if (p.images && p.images.length > 0) {
+        currentProjectImages = p.images;
+        currentSlideIndex = 0;
+
+        let slidesHTML = p.images.map((img, index) => `
+            <div class="carousel-slide ${index === 0 ? 'active' : ''}">
+                <div class="carousel-loader"></div>
+                <img src="${convertGoogleDriveLink(img)}" 
+                     onload="this.parentElement.querySelector('.carousel-loader').style.display='none'; this.style.opacity='1'" 
+                     onerror="this.parentElement.querySelector('.carousel-loader').style.display='none'; this.parentElement.innerHTML='<div style=\'color:white;text-align:center;padding:2rem;\'>Image failed to load.<br>Check link permissions.</div>'"
+                     referrerpolicy="no-referrer">
+            </div>`).join('');
+        let navHTML = '';
+
+        if (p.images.length > 1) {
+            navHTML = `
+                <button class="carousel-prev" onclick="moveSlide(-1)">&#10094;</button>
+                <button class="carousel-next" onclick="moveSlide(1)">&#10095;</button>
+                <div class="carousel-dots">
+                    ${p.images.map((_, i) => `<span class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="setSlide(${i})"></span>`).join('')}
+                </div>
+            `;
+        }
+
+        carouselContainer.innerHTML = `<div class="carousel">${slidesHTML}${navHTML}</div>`;
+    }
+
+    openModal('projectDetailModal');
+}
+
+function moveSlide(n) {
+    showSlide(currentSlideIndex += n);
+}
+
+function setSlide(n) {
+    showSlide(currentSlideIndex = n);
+}
+
+function showSlide(n) {
+    const slides = document.querySelectorAll('.carousel-slide');
+    const dots = document.querySelectorAll('.carousel-dot');
+    if (slides.length === 0) return;
+
+    if (n >= slides.length) currentSlideIndex = 0;
+    if (n < 0) currentSlideIndex = slides.length - 1;
+
+    slides.forEach(s => s.classList.remove('active'));
+    dots.forEach(d => d.classList.remove('active'));
+
+    slides[currentSlideIndex].classList.add('active');
+    if (dots.length > 0) dots[currentSlideIndex].classList.add('active');
+}
+
 function closeProjectDetails() { closeModal('projectDetailModal'); }
 function showReferences() { openModal('referencesModal'); }
 function closeReferences() { closeModal('referencesModal'); }

@@ -11,12 +11,18 @@ const firebaseConfig = {
 };
 
 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const db = firebase.firestore();
 const auth = firebase.auth();
+const storage = firebase.storage();
 
 // 2. State & Cache
 let currentAdminTab = 'projects';
 let dataCache = { projects: [], experience: [], education: [], skills: [], references: [], settings: [] };
+// Cropper State
+let cropper = null;
+let currentCropTarget = null; // 'references' or similar
+let croppedBlob = null;
 
 // 3. Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -30,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (loginSection) loginSection.style.display = 'none';
             if (contentSection) contentSection.style.display = 'block';
             if (userEmailDisplay) userEmailDisplay.textContent = user.email;
-            
+
             // Start Fetching Data ONLY when logged in
             ['projects', 'experience', 'education', 'skills', 'references', 'settings'].forEach(col => fetchCollection(col));
             switchAdminTab(currentAdminTab);
@@ -70,7 +76,7 @@ function fetchCollection(collectionName) {
             item.docId = doc.id;
             items.push(item);
         });
-        
+
         // Sort
         if (collectionName !== 'settings') {
             items.sort((a, b) => {
@@ -94,14 +100,16 @@ function switchAdminTab(tab) {
     if (tab === 'settings') {
         const existingConfig = dataCache.settings.find(i => i.docId === 'config');
         document.getElementById('adminList').innerHTML = '';
-        document.getElementById('addItemForm').style.display = 'block';
+        // Use Modal for Settings too
+        showAddItemForm(true); // Special flag for settings
         document.getElementById('editItemId').value = 'config';
         document.getElementById('dynamicFormFields').innerHTML = generateFormFields('settings', existingConfig || {});
+
         // Hide add button
         const addBtn = document.querySelector('.admin-actions button');
         if (addBtn) addBtn.style.display = 'none';
     } else {
-        document.getElementById('addItemForm').style.display = 'none';
+        document.getElementById('adminModal').style.display = 'none';
         const addBtn = document.querySelector('.admin-actions button');
         if (addBtn) addBtn.style.display = 'inline-flex';
         renderAdminList();
@@ -109,19 +117,19 @@ function switchAdminTab(tab) {
 }
 
 function renderAdminList() {
-    const container = document.getElementById('adminList'); 
-    const items = dataCache[currentAdminTab] || []; 
+    const container = document.getElementById('adminList');
+    const items = dataCache[currentAdminTab] || [];
     container.innerHTML = '';
-    
-    if (items.length === 0) { 
-        container.innerHTML = `<p style="padding:1rem; text-align:center; color:#666;">No items found in ${currentAdminTab}.</p>`; 
-        return; 
+
+    if (items.length === 0) {
+        container.innerHTML = `<p style="padding:1rem; text-align:center; color:#666;">No items found in ${currentAdminTab}.</p>`;
+        return;
     }
 
     items.forEach((item, index) => {
         let title = item.name || item.title || item.role || item.degree || item.category;
         let subtitle = item.company || item.institution || item.relation || item.status || "";
-        
+
         // Disable move buttons at ends
         const upDisabled = index === 0 ? 'opacity:0.3; pointer-events:none;' : '';
         const downDisabled = index === items.length - 1 ? 'opacity:0.3; pointer-events:none;' : '';
@@ -143,44 +151,77 @@ function renderAdminList() {
     });
 }
 
-function showAddItemForm() { 
-    document.getElementById('addItemForm').style.display = 'block'; 
-    document.getElementById('editItemId').value = ''; 
-    document.getElementById('dynamicFormFields').innerHTML = generateFormFields(currentAdminTab); 
-    // Scroll to form
-    document.getElementById('addItemForm').scrollIntoView({ behavior: 'smooth' });
+
+
+function showAddItemForm(isSettings = false) {
+    document.getElementById('adminModal').style.display = 'flex';
+    if (!isSettings) {
+        document.getElementById('editItemId').value = '';
+        document.getElementById('dynamicFormFields').innerHTML = generateFormFields(currentAdminTab);
+    }
 }
 
-function cancelAddItem() { 
-    document.getElementById('addItemForm').style.display = 'none'; 
+function cancelAddItem() {
+    document.getElementById('adminModal').style.display = 'none';
+    if (currentAdminTab === 'settings') switchAdminTab('projects'); // Go back to default if canceling settings
 }
 
-function editItem(docId) { 
-    const item = dataCache[currentAdminTab].find(i => i.docId === docId); 
-    if (!item) return; 
-    
-    document.getElementById('addItemForm').style.display = 'block'; 
-    document.getElementById('editItemId').value = docId; 
+function editItem(docId) {
+    const item = dataCache[currentAdminTab].find(i => i.docId === docId);
+    if (!item) return;
+
+    document.getElementById('adminModal').style.display = 'flex';
+    document.getElementById('editItemId').value = docId;
     document.getElementById('dynamicFormFields').innerHTML = generateFormFields(currentAdminTab, item);
-    // Scroll to form
-    document.getElementById('addItemForm').scrollIntoView({ behavior: 'smooth' });
+
+    // Populate Images for Projects NOT NEEDED HERE anymore as it is handled in generateFormFields
+    // The "Initial Image Input" logic is removed because we use a File Picker now.
 }
+
+// DYNAMIC IMAGE FIELDS LOGIC (Replaced by File Picker)
 
 function generateFormFields(type, data = {}) {
     const v = (key) => data[key] || '';
 
     if (type === 'settings') {
         return `<label style="display:block;margin-bottom:5px;">Resume URL</label>
-                <input type="text" id="inp_resumeUrl" placeholder="https://..." value="${v('resumeUrl')}">`;
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="inp_resumeUrl" placeholder="https://..." value="${v('resumeUrl')}" style="flex-grow:1; margin:0;">
+                    <button class="btn-secondary" onclick="document.getElementById('inp_resume_file').click()">Upload</button>
+                    <input type="file" id="inp_resume_file" accept=".pdf,.doc,.docx" style="display:none;" onchange="uploadResume(this)">
+                </div>`;
     }
 
-    if (type === 'projects') return `
+    if (type === 'projects') {
+        const existingImages = data.images || [];
+        const existingImagesHTML = existingImages.map(url => `
+            <div class="existing-image" style="display:flex; align-items:center; gap:10px; margin-bottom:5px; background:#f5f5f5; padding:5px; border-radius:6px;">
+                <img src="${url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                <input type="text" class="inp_existing_image" value="${url}" readonly style="flex-grow:1; font-size:0.8rem; border:none; background:transparent;">
+                <button onclick="this.parentElement.remove()" style="color:red; cursor:pointer; border:none; background:transparent;">&times;</button>
+            </div>
+        `).join('');
+
+        return `
         <input type="text" id="inp_title" placeholder="Project Title" value="${v('title')}">
         <input type="text" id="inp_desc" placeholder="Short Description" value="${v('description')}">
         <textarea id="inp_details" placeholder="Detailed Description / Story" rows="5">${v('details')}</textarea>
         <input type="text" id="inp_link" placeholder="Project Link (URL)" value="${v('link')}">
         <input type="text" id="inp_tags" placeholder="Tags (comma separated)" value="${(data.tags || []).join(',')}">
-        <select id="inp_visibility">
+        
+        <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Project Images</label>
+        
+        <!-- Existing Images List -->
+        <div id="existingImagesList">${existingImagesHTML}</div>
+
+        <!-- File Upload -->
+        <div style="background:#e3f2fd; padding:15px; border-radius:8px; border:2px dashed #90caf9; text-align:center; margin-top:10px;">
+            <p style="margin-bottom:10px; font-weight:500; color:#1565c0;">Upload New Images</p>
+            <input type="file" id="inp_files" multiple accept="image/*" style="display:block; margin:auto;">
+            <div id="uploadPreview" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; justify-content:center;"></div>
+        </div>
+
+        <select id="inp_visibility" style="margin-top:15px;">
             <option value="public" ${v('visibility') === 'public' ? 'selected' : ''}>Public</option>
             <option value="private" ${v('visibility') === 'private' ? 'selected' : ''}>Private</option>
         </select>
@@ -188,6 +229,7 @@ function generateFormFields(type, data = {}) {
             <input type="checkbox" id="inp_highlight" ${v('highlight') ? 'checked' : ''} style="width:auto;margin:0;"> 
             Highlight (Show bigger card)
         </label>`;
+    }
 
     if (type === 'experience') return `
         <input type="text" id="inp_role" placeholder="Role / Position" value="${v('role')}">
@@ -211,23 +253,32 @@ function generateFormFields(type, data = {}) {
         <input type="text" id="inp_role" placeholder="Position / Role" value="${v('role')}">
         <input type="text" id="inp_company" placeholder="Company" value="${v('company')}">
         <input type="text" id="inp_relation" placeholder="Relation (e.g. Manager)" value="${v('relation')}">
-        <input type="text" id="inp_image" placeholder="Image URL (Drive/GitHub)" value="${v('image')}">
+        
+        <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Reference Image</label>
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+             ${v('image') ? `<img src="${v('image')}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">` : ''}
+             <input type="text" id="inp_image" placeholder="Image URL" value="${v('image')}" style="flex-grow:1; margin:0;" readonly>
+        </div>
+        <button class="btn-secondary" onclick="document.getElementById('inp_ref_file').click()" style="margin-bottom:10px; font-size:0.8rem;">Upload & Crop Image</button>
+        <input type="file" id="inp_ref_file" accept="image/*" style="display:none;" onchange="startCrop(this)">
+        <div id="crop_preview_msg" style="color:green; font-weight:bold; font-size:0.8rem; display:none;">Image Cropped & Ready to Upload!</div>
+
         <textarea id="inp_quote" placeholder="Quote / Testimonial" rows="3">${v('quote')}</textarea>
         <input type="text" id="inp_linkedin" placeholder="LinkedIn URL" value="${v('linkedin')}">
         <input type="text" id="inp_email" placeholder="Email Address" value="${v('email')}">`;
-        
+
     return '';
 }
 
 // 7. CRUD Operations
-function saveItemToFirebase() {
+async function saveItemToFirebase() {
     const docId = document.getElementById('editItemId').value;
     const currentItems = dataCache[currentAdminTab] || [];
-    
+
     // Auto-order for new items
     const maxOrder = currentItems.reduce((max, item) => Math.max(max, item.order || 0), 0);
-    
-    let data = { id: Date.now() }; 
+
+    let data = { id: Date.now() };
     if (!docId) data.order = maxOrder + 1;
 
     // Settings Special Case
@@ -239,106 +290,237 @@ function saveItemToFirebase() {
     }
 
     // Collect Data based on Tab
-    if (currentAdminTab === 'projects') { 
-        data.title = document.getElementById('inp_title').value; 
-        data.description = document.getElementById('inp_desc').value; 
-        data.details = document.getElementById('inp_details').value; 
-        data.link = document.getElementById('inp_link').value; 
-        data.tags = document.getElementById('inp_tags').value.split(',').map(s => s.trim()).filter(s => s); 
-        data.visibility = document.getElementById('inp_visibility').value; 
-        data.highlight = document.getElementById('inp_highlight').checked; 
-        data.status = 'Active'; 
-        data.icon = 'work'; 
+    if (currentAdminTab === 'projects') {
+        const title = document.getElementById('inp_title').value;
+        if (!title) { alert("Title is required"); return; }
+
+        // Show Loading State
+        const saveBtn = document.querySelector('#adminModal .btn-primary');
+        const originalText = saveBtn.innerText;
+        saveBtn.innerText = "Uploading & Saving...";
+        saveBtn.disabled = true;
+
+        // 1. Collect Existing URLs
+        const existingInputs = document.querySelectorAll('.inp_existing_image');
+        let finalImages = Array.from(existingInputs).map(inp => inp.value);
+
+        // 2. Upload New Files
+        const fileInput = document.getElementById('inp_files');
+        if (fileInput.files.length > 0) {
+            try {
+                const uploadPromises = Array.from(fileInput.files).map((file, index) => {
+                    const uniqueName = `projects/${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}_${index}`;
+                    return uploadFileToStorage(file, uniqueName);
+                });
+
+                const newUrls = await Promise.all(uploadPromises);
+                finalImages = [...finalImages, ...newUrls];
+            } catch (error) {
+                alert("Upload Failed: " + error.message);
+                saveBtn.innerText = originalText;
+                saveBtn.disabled = false;
+                return;
+            }
+        }
+
+        data.title = title;
+        data.description = document.getElementById('inp_desc').value;
+        data.details = document.getElementById('inp_details').value;
+        data.link = document.getElementById('inp_link').value;
+        data.tags = document.getElementById('inp_tags').value.split(',').map(s => s.trim()).filter(s => s);
+        data.images = finalImages;
+
+        data.visibility = document.getElementById('inp_visibility').value;
+        data.highlight = document.getElementById('inp_highlight').checked;
+        data.status = 'Active';
+        data.icon = 'work';
     }
-    else if (currentAdminTab === 'experience') { 
-        data.role = document.getElementById('inp_role').value; 
-        data.company = document.getElementById('inp_company').value; 
-        data.period = document.getElementById('inp_period').value; 
-        data.highlights = document.getElementById('inp_highlights').value.split('\n').filter(s => s.trim()); 
+    else if (currentAdminTab === 'experience') {
+        data.role = document.getElementById('inp_role').value;
+        data.company = document.getElementById('inp_company').value;
+        data.period = document.getElementById('inp_period').value;
+        data.highlights = document.getElementById('inp_highlights').value.split('\n').filter(s => s.trim());
     }
-    else if (currentAdminTab === 'education') { 
-        data.degree = document.getElementById('inp_degree').value; 
-        data.field = document.getElementById('inp_field').value; 
-        data.institution = document.getElementById('inp_institution').value; 
-        data.year = document.getElementById('inp_year').value; 
+    else if (currentAdminTab === 'education') {
+        data.degree = document.getElementById('inp_degree').value;
+        data.field = document.getElementById('inp_field').value;
+        data.institution = document.getElementById('inp_institution').value;
+        data.year = document.getElementById('inp_year').value;
     }
-    else if (currentAdminTab === 'skills') { 
-        data.category = document.getElementById('inp_category').value; 
-        data.icon = document.getElementById('inp_icon').value; 
-        data.items = document.getElementById('inp_items').value.split(',').map(s => s.trim()).filter(s => s); 
+    else if (currentAdminTab === 'skills') {
+        data.category = document.getElementById('inp_category').value;
+        data.icon = document.getElementById('inp_icon').value;
+        data.items = document.getElementById('inp_items').value.split(',').map(s => s.trim()).filter(s => s);
     }
-    else if (currentAdminTab === 'references') { 
-        data.name = document.getElementById('inp_name').value; 
-        data.role = document.getElementById('inp_role').value; 
-        data.company = document.getElementById('inp_company').value; 
-        data.relation = document.getElementById('inp_relation').value; 
-        data.image = document.getElementById('inp_image').value; 
-        data.quote = document.getElementById('inp_quote').value; 
-        data.linkedin = document.getElementById('inp_linkedin').value; 
-        data.email = document.getElementById('inp_email').value; 
+    else if (currentAdminTab === 'references') {
+        data.name = document.getElementById('inp_name').value;
+        if (!data.name) { alert("Name is required"); return; }
+
+        if (croppedBlob) {
+            const saveBtn = document.querySelector('#adminModal .btn-primary');
+            saveBtn.innerText = "Uploading Crop...";
+            saveBtn.disabled = true;
+            try {
+                const uniqueName = `references/${data.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.jpg`;
+                const url = await uploadFileToStorage(croppedBlob, uniqueName);
+                data.image = url;
+            } catch (e) {
+                alert("Crop Upload Failed: " + e.message);
+                saveBtn.innerText = "Save Changes";
+                saveBtn.disabled = false;
+                return;
+            }
+        } else {
+            data.image = document.getElementById('inp_image').value;
+        }
+
+        data.role = document.getElementById('inp_role').value;
+        data.company = document.getElementById('inp_company').value;
+        data.relation = document.getElementById('inp_relation').value;
+        data.quote = document.getElementById('inp_quote').value;
+        data.linkedin = document.getElementById('inp_linkedin').value;
+        data.email = document.getElementById('inp_email').value;
+
+        // Clear blob
+        croppedBlob = null;
     }
 
     if (docId) {
         db.collection(currentAdminTab).doc(docId).update(data)
-            .then(() => { 
-                alert("Updated!"); 
-                document.getElementById('addItemForm').style.display = 'none'; 
+            .then(() => {
+                alert("Updated!");
+                document.getElementById('adminModal').style.display = 'none';
             })
             .catch(err => alert("Error updating: " + err.message));
     } else {
         db.collection(currentAdminTab).add(data)
-            .then(() => { 
-                alert("Created!"); 
-                document.getElementById('addItemForm').style.display = 'none'; 
+            .then(() => {
+                alert("Created!");
+                document.getElementById('adminModal').style.display = 'none';
             })
             .catch(err => alert("Error creating: " + err.message));
     }
 }
 
-function deleteItem(docId) { 
+function deleteItem(docId) {
     if (confirm("Are you sure you want to delete this item?")) {
         db.collection(currentAdminTab).doc(docId).delete()
             .catch(err => alert("Error deleting: " + err.message));
     }
 }
 
-async function moveItem(docId, dir) { 
-    const items = [...dataCache[currentAdminTab]]; 
-    const idx = items.findIndex(i => i.docId === docId); 
-    if (idx === -1) return; 
-    
-    const tIdx = idx + dir; 
+async function moveItem(docId, dir) {
+    const items = [...dataCache[currentAdminTab]];
+    const idx = items.findIndex(i => i.docId === docId);
+    if (idx === -1) return;
+
+    const tIdx = idx + dir;
     if (tIdx < 0 || tIdx >= items.length) return;
-    
+
     // Swap Order Values
     // Note: This relies on the sort being stable by order
     // Ideally we should just swap the 'order' fields of the two items
-    
+
     // Simplified logic: 
     // 1. Get current order values
     // 2. Swap them
     // 3. Update both docs
-    
+
     const itemA = items[idx];
     const itemB = items[tIdx];
-    
+
     const orderA = itemA.order || 0;
     const orderB = itemB.order || 0;
 
     const batch = db.batch();
-    
+
     // Swap orders
     // If orders are same (bad data), increment one
     let newOrderA = orderB;
     let newOrderB = orderA;
-    
+
     if (newOrderA === newOrderB) {
         newOrderA = idx + 1 + dir;
         newOrderB = idx + 1;
     }
-    
+
     batch.update(db.collection(currentAdminTab).doc(itemA.docId), { order: newOrderA });
     batch.update(db.collection(currentAdminTab).doc(itemB.docId), { order: newOrderB });
-    
+
     await batch.commit().catch(err => console.error(err));
+}
+
+// ==========================================
+// NEW: HELPER FUNCTIONS FOR UPLOAD & CROP
+// ==========================================
+
+function uploadFileToStorage(file, path) {
+    const ref = storage.ref(path);
+    return ref.put(file).then(snapshot => snapshot.ref.getDownloadURL());
+}
+
+async function uploadResume(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const btn = input.previousElementSibling;
+        const originalText = btn.innerText;
+        btn.innerText = "Uploading...";
+        btn.disabled = true;
+
+        try {
+            const path = `resumes/${Date.now()}_${file.name}`;
+            const ref = storage.ref(path);
+            const metadata = {
+                contentDisposition: 'attachment; filename="' + file.name + '"'
+            };
+            const snapshot = await ref.put(file, metadata);
+            const url = await snapshot.ref.getDownloadURL();
+            document.getElementById('inp_resumeUrl').value = url;
+            alert("Resume Uploaded!");
+        } catch (e) {
+            alert("Error: " + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+}
+
+function startCrop(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.getElementById('cropperImage');
+            img.src = e.target.result;
+            document.getElementById('cropperModal').style.display = 'flex';
+
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(img, {
+                aspectRatio: 1, // Square for avatar
+                viewMode: 1
+            });
+        }
+        reader.readAsDataURL(file);
+    }
+}
+
+function cancelCrop() {
+    document.getElementById('cropperModal').style.display = 'none';
+    if (cropper) cropper.destroy();
+    document.getElementById('inp_ref_file').value = ''; // Reset input
+    croppedBlob = null;
+}
+
+function finishCrop() {
+    if (cropper) {
+        cropper.getCroppedCanvas({
+            width: 300,
+            height: 300 // Reasonable size for avatar
+        }).toBlob((blob) => {
+            croppedBlob = blob;
+            document.getElementById('crop_preview_msg').style.display = 'block';
+            document.getElementById('cropperModal').style.display = 'none';
+        });
+    }
 }

@@ -502,6 +502,8 @@ section {
 .timeline {
     position: relative;
     padding-left: 3rem;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 .timeline::before {
@@ -660,6 +662,145 @@ section {
     justify-content: space-between;
     min-height: 220px;
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===================================
+   CAROUSEL STYLES
+   =================================== */
+.carousel {
+    position: relative;
+    width: 100%;
+    margin-bottom: 2rem;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: transparent;
+    /* Changed from #000 */
+}
+
+.carousel-slide {
+    display: none;
+    /* Hidden by default */
+    width: 100%;
+    height: auto;
+    max-height: 50vh;
+    /* Limits height to half viewport */
+    background: transparent;
+    position: relative;
+    text-align: center;
+    /* Centering */
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-slide img {
+    max-width: 100%;
+    max-height: 40vh;
+    /* Reduced from 50vh */
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    border-radius: 16px;
+    /* Rounded corners */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.carousel-slide.active {
+    display: flex;
+    /* Only active slide matches this */
+    animation: fadeEffect 0.5s;
+}
+
+.carousel-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 1;
+}
+
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes fadeEffect {
+    from {
+        opacity: 0.8;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.carousel-prev,
+.carousel-next {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    transition: 0.3s;
+    user-select: none;
+    border: none;
+    z-index: 2;
+}
+
+.carousel-prev {
+    left: 15px;
+}
+
+.carousel-next {
+    right: 15px;
+}
+
+.carousel-prev:hover,
+.carousel-next:hover {
+    background: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.carousel-dot {
+    cursor: pointer;
+    height: 8px;
+    width: 8px;
+    margin: 0 2px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+    transition: background-color 0.6s ease;
+}
+
+.carousel-dot.active {
+    background-color: var(--primary);
 }
 
 .project-card.highlight {
