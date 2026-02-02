@@ -33,6 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const userEmailDisplay = document.getElementById('userEmailDisplay');
 
         if (user) {
+            // SECURITY: Whitelist Check
+            const ALLOWED_EMAIL = "adarshrajendran0@gmail.com";
+            if (user.email !== ALLOWED_EMAIL) {
+                alert("Access Denied: " + user.email + " is not authorized.");
+                auth.signOut();
+                return;
+            }
+
             if (loginSection) loginSection.style.display = 'none';
             if (contentSection) contentSection.style.display = 'block';
             if (userEmailDisplay) userEmailDisplay.textContent = user.email;
@@ -48,22 +56,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // 4. Auth Functions
+// 4. Auth Functions
 function adminLogin() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-
-    if (!email || !password) {
-        alert("Please enter both email and password.");
-        return;
-    }
-
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            console.log("Logged in:", userCredential.user.email);
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+        .then((result) => {
+            console.log("Logged in as:", result.user.email);
+            // onAuthStateChanged will handle the UI switch automatically
         })
         .catch((error) => {
             console.error("Login Error:", error);
-            alert("Login Failed: " + error.message);
+            const errorMsg = document.getElementById('loginError');
+            if (errorMsg) {
+                errorMsg.textContent = "Login Failed: " + error.message;
+                errorMsg.style.display = 'block';
+            } else {
+                alert("Login Failed: " + error.message);
+            }
         });
 }
 
