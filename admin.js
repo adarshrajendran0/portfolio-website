@@ -199,337 +199,379 @@ function generateFormFields(type, data = {}) {
                     <button class="btn-secondary" onclick="document.getElementById('inp_resume_file').click()">Upload</button>
                     <input type="file" id="inp_resume_file" accept=".pdf,.doc,.docx" style="display:none;" onchange="uploadResume(this)">
                 </div>`;
-    }
+                </div >
 
-    if (type === 'projects') {
+            <hr style="margin:20px 0; border:0; border-top:1px solid #ddd;">
+
+                <h4 style="margin-bottom:10px; color:#333;">Hero Section (Home)</h4>
+
+                <label style="display:block;margin-bottom:5px;">Badge Text</label>
+                <input type="text" id="inp_hero_badge" placeholder="Available for R&D Roles" value="${v('heroBadge')}">
+
+                    <label style="display:block;margin-bottom:5px;">Title (Use &lt;br&gt; for line breaks)</label>
+                    <input type="text" id="inp_hero_title" placeholder="Engineering at the <br> Intersection of Innovation." value="${v('heroTitle')}">
+
+                        <label style="display:block;margin-bottom:5px;">Description</label>
+                        <textarea id="inp_hero_desc" rows="3" placeholder="Mechanical R&D Engineer...">${v('heroDesc')}</textarea>
+
+                        <label style="display:block;margin-bottom:5px; font-weight:600;">Stats</label>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:5px;">
+                            <input type="text" id="inp_stat1_num" placeholder="3+" value="${v('stat1Num')}">
+                                <input type="text" id="inp_stat1_label" placeholder="Years R&D" value="${v('stat1Label')}">
+                                </div>
+                                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:5px;">
+                                    <input type="text" id="inp_stat2_num" placeholder="AIR 2" value="${v('stat2Num')}">
+                                        <input type="text" id="inp_stat2_label" placeholder="National Rank" value="${v('stat2Label')}">
+                                        </div>
+                                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                                            <input type="text" id="inp_stat3_num" placeholder="10+" value="${v('stat3Num')}">
+                                                <input type="text" id="inp_stat3_label" placeholder="Projects" value="${v('stat3Label')}">
+                                                </div>`;
+
+                                                if (type === 'projects') {
         const existingImages = data.images || [];
         const existingImagesHTML = existingImages.map(url => `
-            <div class="existing-image" style="display:flex; align-items:center; gap:10px; margin-bottom:5px; background:#f5f5f5; padding:5px; border-radius:6px;">
-                <img src="${url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
-                <input type="text" class="inp_existing_image" value="${url}" readonly style="flex-grow:1; font-size:0.8rem; border:none; background:transparent;">
-                <button onclick="this.parentElement.remove()" style="color:red; cursor:pointer; border:none; background:transparent;">&times;</button>
-            </div>
-        `).join('');
+                                                <div class="existing-image" style="display:flex; align-items:center; gap:10px; margin-bottom:5px; background:#f5f5f5; padding:5px; border-radius:6px;">
+                                                    <img src="${url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                                                        <input type="text" class="inp_existing_image" value="${url}" readonly style="flex-grow:1; font-size:0.8rem; border:none; background:transparent;">
+                                                            <button onclick="this.parentElement.remove()" style="color:red; cursor:pointer; border:none; background:transparent;">&times;</button>
+                                                        </div>
+                                                        `).join('');
 
-        return `
-        <input type="text" id="inp_title" placeholder="Project Title" value="${v('title')}">
-        <input type="text" id="inp_desc" placeholder="Short Description" value="${v('description')}">
-        <textarea id="inp_details" placeholder="Detailed Description / Story" rows="5">${v('details')}</textarea>
-        <input type="text" id="inp_link" placeholder="Project Link (URL)" value="${v('link')}">
-        <input type="text" id="inp_tags" placeholder="Tags (comma separated)" value="${(data.tags || []).join(',')}">
-        
-        <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Project Images</label>
-        
-        <!-- Existing Images List -->
-        <div id="existingImagesList">${existingImagesHTML}</div>
+                                                        return `
+                                                        <input type="text" id="inp_title" placeholder="Project Title" value="${v('title')}">
+                                                            <input type="text" id="inp_desc" placeholder="Short Description" value="${v('description')}">
+                                                                <textarea id="inp_details" placeholder="Detailed Description / Story" rows="5">${v('details')}</textarea>
+                                                                <input type="text" id="inp_link" placeholder="Project Link (URL)" value="${v('link')}">
+                                                                    <input type="text" id="inp_tags" placeholder="Tags (comma separated)" value="${(data.tags || []).join(',')}">
 
-        <!-- File Upload -->
-        <div style="background:#e3f2fd; padding:15px; border-radius:8px; border:2px dashed #90caf9; text-align:center; margin-top:10px;">
-            <p style="margin-bottom:10px; font-weight:500; color:#1565c0;">Upload New Images</p>
-            <input type="file" id="inp_files" multiple accept="image/*" style="display:block; margin:auto;">
-            <div id="uploadPreview" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; justify-content:center;"></div>
-        </div>
+                                                                        <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Project Images</label>
 
-        <select id="inp_visibility" style="margin-top:15px;">
-            <option value="public" ${v('visibility') === 'public' ? 'selected' : ''}>Public</option>
-            <option value="private" ${v('visibility') === 'private' ? 'selected' : ''}>Private</option>
-        </select>
-        <label style="display:flex;align-items:center;gap:10px;margin-top:10px;">
-            <input type="checkbox" id="inp_highlight" ${v('highlight') ? 'checked' : ''} style="width:auto;margin:0;"> 
-            Highlight (Show bigger card)
-        </label>`;
+                                                                        <!-- Existing Images List -->
+                                                                        <div id="existingImagesList">${existingImagesHTML}</div>
+
+                                                                        <!-- File Upload -->
+                                                                        <div style="background:#e3f2fd; padding:15px; border-radius:8px; border:2px dashed #90caf9; text-align:center; margin-top:10px;">
+                                                                            <p style="margin-bottom:10px; font-weight:500; color:#1565c0;">Upload New Images</p>
+                                                                            <input type="file" id="inp_files" multiple accept="image/*" style="display:block; margin:auto;">
+                                                                                <div id="uploadPreview" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; justify-content:center;"></div>
+                                                                        </div>
+
+                                                                        <select id="inp_visibility" style="margin-top:15px;">
+                                                                            <option value="public" ${v('visibility') === 'public' ? 'selected' : ''}>Public</option>
+                                                                            <option value="private" ${v('visibility') === 'private' ? 'selected' : ''}>Private</option>
+                                                                        </select>
+                                                                        <label style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+                                                                            <input type="checkbox" id="inp_highlight" ${v('highlight') ? 'checked' : ''} style="width:auto;margin:0;">
+                                                                                Highlight (Show bigger card)
+                                                                        </label>`;
     }
 
-    if (type === 'experience') return `
-        <input type="text" id="inp_role" placeholder="Role / Position" value="${v('role')}">
-        <input type="text" id="inp_company" placeholder="Company Name" value="${v('company')}">
-        <input type="text" id="inp_period" placeholder="Duration (e.g. Jan 2023 - Present)" value="${v('period')}">
-        <textarea id="inp_highlights" placeholder="Highlights (One per line)" rows="5">${(data.highlights || []).join('\n')}</textarea>`;
+                                                                        if (type === 'experience') return `
+                                                                        <input type="text" id="inp_role" placeholder="Role / Position" value="${v('role')}">
+                                                                            <input type="text" id="inp_company" placeholder="Company Name" value="${v('company')}">
+                                                                                <input type="text" id="inp_period" placeholder="Duration (e.g. Jan 2023 - Present)" value="${v('period')}">
+                                                                                    <textarea id="inp_highlights" placeholder="Highlights (One per line)" rows="5">${(data.highlights || []).join('\n')}</textarea>`;
 
-    if (type === 'education') return `
-        <input type="text" id="inp_degree" placeholder="Degree" value="${v('degree')}">
-        <input type="text" id="inp_field" placeholder="Field of Study" value="${v('field')}">
-        <input type="text" id="inp_institution" placeholder="Institution" value="${v('institution')}">
-        <input type="text" id="inp_year" placeholder="Year / Duration" value="${v('year')}">`;
+                                                                                    if (type === 'education') return `
+                                                                                    <input type="text" id="inp_degree" placeholder="Degree" value="${v('degree')}">
+                                                                                        <input type="text" id="inp_field" placeholder="Field of Study" value="${v('field')}">
+                                                                                            <input type="text" id="inp_institution" placeholder="Institution" value="${v('institution')}">
+                                                                                                <input type="text" id="inp_year" placeholder="Year / Duration" value="${v('year')}">`;
 
-    if (type === 'skills') return `
-        <input type="text" id="inp_category" placeholder="Category Name" value="${v('category')}">
-        <input type="text" id="inp_icon" placeholder="Material Icon Name (e.g. code)" value="${v('icon')}">
-        <textarea id="inp_items" placeholder="Skills (comma separated)" rows="3">${(data.items || []).join(',')}</textarea>`;
+                                                                                                    if (type === 'skills') return `
+                                                                                                    <input type="text" id="inp_category" placeholder="Category Name" value="${v('category')}">
+                                                                                                        <input type="text" id="inp_icon" placeholder="Material Icon Name (e.g. code)" value="${v('icon')}">
+                                                                                                            <textarea id="inp_items" placeholder="Skills (comma separated)" rows="3">${(data.items || []).join(',')}</textarea>`;
 
-    if (type === 'references') return `
-        <input type="text" id="inp_name" placeholder="Name" value="${v('name')}">
-        <input type="text" id="inp_role" placeholder="Position / Role" value="${v('role')}">
-        <input type="text" id="inp_company" placeholder="Company" value="${v('company')}">
-        <input type="text" id="inp_relation" placeholder="Relation (e.g. Manager)" value="${v('relation')}">
-        
-        <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Reference Image</label>
-        <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-             ${v('image') ? `<img src="${v('image')}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">` : ''}
-             <input type="text" id="inp_image" placeholder="Image URL" value="${v('image')}" style="flex-grow:1; margin:0;" readonly>
-        </div>
-        <button class="btn-secondary" onclick="document.getElementById('inp_ref_file').click()" style="margin-bottom:10px; font-size:0.8rem;">Upload & Crop Image</button>
-        <input type="file" id="inp_ref_file" accept="image/*" style="display:none;" onchange="startCrop(this)">
-        <div id="crop_preview_msg" style="color:green; font-weight:bold; font-size:0.8rem; display:none;">Image Cropped & Ready to Upload!</div>
+                                                                                                            if (type === 'references') return `
+                                                                                                            <input type="text" id="inp_name" placeholder="Name" value="${v('name')}">
+                                                                                                                <input type="text" id="inp_role" placeholder="Position / Role" value="${v('role')}">
+                                                                                                                    <input type="text" id="inp_company" placeholder="Company" value="${v('company')}">
+                                                                                                                        <input type="text" id="inp_relation" placeholder="Relation (e.g. Manager)" value="${v('relation')}">
 
-        <textarea id="inp_quote" placeholder="Quote / Testimonial" rows="3">${v('quote')}</textarea>
-        <input type="text" id="inp_linkedin" placeholder="LinkedIn URL" value="${v('linkedin')}">
-        <input type="text" id="inp_email" placeholder="Email Address" value="${v('email')}">`;
+                                                                                                                            <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Reference Image</label>
+                                                                                                                            <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                                                                                                                                ${v('image') ? `<img src="${v('image')}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">` : ''}
+                                                                                                                                <input type="text" id="inp_image" placeholder="Image URL" value="${v('image')}" style="flex-grow:1; margin:0;" readonly>
+                                                                                                                            </div>
+                                                                                                                            <button class="btn-secondary" onclick="document.getElementById('inp_ref_file').click()" style="margin-bottom:10px; font-size:0.8rem;">Upload & Crop Image</button>
+                                                                                                                            <input type="file" id="inp_ref_file" accept="image/*" style="display:none;" onchange="startCrop(this)">
+                                                                                                                                <div id="crop_preview_msg" style="color:green; font-weight:bold; font-size:0.8rem; display:none;">Image Cropped & Ready to Upload!</div>
 
-    return '';
+                                                                                                                                <textarea id="inp_quote" placeholder="Quote / Testimonial" rows="3">${v('quote')}</textarea>
+                                                                                                                                <input type="text" id="inp_linkedin" placeholder="LinkedIn URL" value="${v('linkedin')}">
+                                                                                                                                    <input type="text" id="inp_email" placeholder="Email Address" value="${v('email')}">`;
+
+                                                                                                                                        return '';
 }
 
-// 7. CRUD Operations
-async function saveItemToFirebase() {
+                                                                                                                                        // 7. CRUD Operations
+                                                                                                                                        async function saveItemToFirebase() {
     const docId = document.getElementById('editItemId').value;
-    const currentItems = dataCache[currentAdminTab] || [];
+                                                                                                                                        const currentItems = dataCache[currentAdminTab] || [];
 
     // Auto-order for new items
     const maxOrder = currentItems.reduce((max, item) => Math.max(max, item.order || 0), 0);
 
-    let data = { id: Date.now() };
-    if (!docId) data.order = maxOrder + 1;
+                                                                                                                                        let data = {id: Date.now() };
+                                                                                                                                        if (!docId) data.order = maxOrder + 1;
 
-    // Settings Special Case
-    if (currentAdminTab === 'settings') {
+                                                                                                                                        // Settings Special Case
+                                                                                                                                        if (currentAdminTab === 'settings') {
         const resumeUrl = document.getElementById('inp_resumeUrl').value;
-        db.collection('settings').doc('config').set({ resumeUrl: resumeUrl })
-            .then(() => { alert("Saved!"); });
-        return;
+
+                                                                                                                                        const heroData = {
+                                                                                                                                            heroBadge: document.getElementById('inp_hero_badge').value,
+                                                                                                                                        heroTitle: document.getElementById('inp_hero_title').value,
+                                                                                                                                        heroDesc: document.getElementById('inp_hero_desc').value,
+                                                                                                                                        stat1Num: document.getElementById('inp_stat1_num').value,
+                                                                                                                                        stat1Label: document.getElementById('inp_stat1_label').value,
+                                                                                                                                        stat2Num: document.getElementById('inp_stat2_num').value,
+                                                                                                                                        stat2Label: document.getElementById('inp_stat2_label').value,
+                                                                                                                                        stat3Num: document.getElementById('inp_stat3_num').value,
+                                                                                                                                        stat3Label: document.getElementById('inp_stat3_label').value,
+                                                                                                                                        resumeUrl: resumeUrl // Keep resume URL in the same config doc or separate?
+            // Better to keep all 'settings' in one doc for simplicity
+        };
+
+                                                                                                                                        db.collection('settings').doc('config').set(heroData, {merge: true })
+            .then(() => {alert("Settings Saved!"); });
+                                                                                                                                        return;
     }
 
-    // Collect Data based on Tab
-    if (currentAdminTab === 'projects') {
+                                                                                                                                        // Collect Data based on Tab
+                                                                                                                                        if (currentAdminTab === 'projects') {
         const title = document.getElementById('inp_title').value;
-        if (!title) { alert("Title is required"); return; }
+                                                                                                                                        if (!title) {alert("Title is required"); return; }
 
-        // Show Loading State
-        const saveBtn = document.querySelector('#adminModal .btn-primary');
-        const originalText = saveBtn.innerText;
-        saveBtn.innerText = "Uploading & Saving...";
-        saveBtn.disabled = true;
+                                                                                                                                        // Show Loading State
+                                                                                                                                        const saveBtn = document.querySelector('#adminModal .btn-primary');
+                                                                                                                                        const originalText = saveBtn.innerText;
+                                                                                                                                        saveBtn.innerText = "Uploading & Saving...";
+                                                                                                                                        saveBtn.disabled = true;
 
-        // 1. Collect Existing URLs
-        const existingInputs = document.querySelectorAll('.inp_existing_image');
+                                                                                                                                        // 1. Collect Existing URLs
+                                                                                                                                        const existingInputs = document.querySelectorAll('.inp_existing_image');
         let finalImages = Array.from(existingInputs).map(inp => inp.value);
 
-        // 2. Upload New Files
-        const fileInput = document.getElementById('inp_files');
+                                                                                                                                        // 2. Upload New Files
+                                                                                                                                        const fileInput = document.getElementById('inp_files');
         if (fileInput.files.length > 0) {
             try {
                 const uploadPromises = Array.from(fileInput.files).map((file, index) => {
                     const uniqueName = `projects/${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}_${index}`;
-                    return uploadFileToStorage(file, uniqueName);
+                                                                                                                                        return uploadFileToStorage(file, uniqueName);
                 });
 
-                const newUrls = await Promise.all(uploadPromises);
-                finalImages = [...finalImages, ...newUrls];
+                                                                                                                                        const newUrls = await Promise.all(uploadPromises);
+                                                                                                                                        finalImages = [...finalImages, ...newUrls];
             } catch (error) {
-                alert("Upload Failed: " + error.message);
-                saveBtn.innerText = originalText;
-                saveBtn.disabled = false;
-                return;
+                                                                                                                                            alert("Upload Failed: " + error.message);
+                                                                                                                                        saveBtn.innerText = originalText;
+                                                                                                                                        saveBtn.disabled = false;
+                                                                                                                                        return;
             }
         }
 
-        data.title = title;
-        data.description = document.getElementById('inp_desc').value;
-        data.details = document.getElementById('inp_details').value;
-        data.link = document.getElementById('inp_link').value;
+                                                                                                                                        data.title = title;
+                                                                                                                                        data.description = document.getElementById('inp_desc').value;
+                                                                                                                                        data.details = document.getElementById('inp_details').value;
+                                                                                                                                        data.link = document.getElementById('inp_link').value;
         data.tags = document.getElementById('inp_tags').value.split(',').map(s => s.trim()).filter(s => s);
-        data.images = finalImages;
+                                                                                                                                        data.images = finalImages;
 
-        data.visibility = document.getElementById('inp_visibility').value;
-        data.highlight = document.getElementById('inp_highlight').checked;
-        data.status = 'Active';
-        data.icon = 'work';
+                                                                                                                                        data.visibility = document.getElementById('inp_visibility').value;
+                                                                                                                                        data.highlight = document.getElementById('inp_highlight').checked;
+                                                                                                                                        data.status = 'Active';
+                                                                                                                                        data.icon = 'work';
     }
-    else if (currentAdminTab === 'experience') {
-        data.role = document.getElementById('inp_role').value;
-        data.company = document.getElementById('inp_company').value;
-        data.period = document.getElementById('inp_period').value;
+                                                                                                                                        else if (currentAdminTab === 'experience') {
+                                                                                                                                            data.role = document.getElementById('inp_role').value;
+                                                                                                                                        data.company = document.getElementById('inp_company').value;
+                                                                                                                                        data.period = document.getElementById('inp_period').value;
         data.highlights = document.getElementById('inp_highlights').value.split('\n').filter(s => s.trim());
     }
-    else if (currentAdminTab === 'education') {
-        data.degree = document.getElementById('inp_degree').value;
-        data.field = document.getElementById('inp_field').value;
-        data.institution = document.getElementById('inp_institution').value;
-        data.year = document.getElementById('inp_year').value;
+                                                                                                                                        else if (currentAdminTab === 'education') {
+                                                                                                                                            data.degree = document.getElementById('inp_degree').value;
+                                                                                                                                        data.field = document.getElementById('inp_field').value;
+                                                                                                                                        data.institution = document.getElementById('inp_institution').value;
+                                                                                                                                        data.year = document.getElementById('inp_year').value;
     }
-    else if (currentAdminTab === 'skills') {
-        data.category = document.getElementById('inp_category').value;
-        data.icon = document.getElementById('inp_icon').value;
+                                                                                                                                        else if (currentAdminTab === 'skills') {
+                                                                                                                                            data.category = document.getElementById('inp_category').value;
+                                                                                                                                        data.icon = document.getElementById('inp_icon').value;
         data.items = document.getElementById('inp_items').value.split(',').map(s => s.trim()).filter(s => s);
     }
-    else if (currentAdminTab === 'references') {
-        data.name = document.getElementById('inp_name').value;
-        if (!data.name) { alert("Name is required"); return; }
+                                                                                                                                        else if (currentAdminTab === 'references') {
+                                                                                                                                            data.name = document.getElementById('inp_name').value;
+                                                                                                                                        if (!data.name) {alert("Name is required"); return; }
 
-        if (croppedBlob) {
+                                                                                                                                        if (croppedBlob) {
             const saveBtn = document.querySelector('#adminModal .btn-primary');
-            saveBtn.innerText = "Uploading Crop...";
-            saveBtn.disabled = true;
-            try {
+                                                                                                                                        saveBtn.innerText = "Uploading Crop...";
+                                                                                                                                        saveBtn.disabled = true;
+                                                                                                                                        try {
                 const uniqueName = `references/${data.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.jpg`;
-                const url = await uploadFileToStorage(croppedBlob, uniqueName);
-                data.image = url;
+                                                                                                                                        const url = await uploadFileToStorage(croppedBlob, uniqueName);
+                                                                                                                                        data.image = url;
             } catch (e) {
-                alert("Crop Upload Failed: " + e.message);
-                saveBtn.innerText = "Save Changes";
-                saveBtn.disabled = false;
-                return;
+                                                                                                                                            alert("Crop Upload Failed: " + e.message);
+                                                                                                                                        saveBtn.innerText = "Save Changes";
+                                                                                                                                        saveBtn.disabled = false;
+                                                                                                                                        return;
             }
         } else {
-            data.image = document.getElementById('inp_image').value;
+                                                                                                                                            data.image = document.getElementById('inp_image').value;
         }
 
-        data.role = document.getElementById('inp_role').value;
-        data.company = document.getElementById('inp_company').value;
-        data.relation = document.getElementById('inp_relation').value;
-        data.quote = document.getElementById('inp_quote').value;
-        data.linkedin = document.getElementById('inp_linkedin').value;
-        data.email = document.getElementById('inp_email').value;
+                                                                                                                                        data.role = document.getElementById('inp_role').value;
+                                                                                                                                        data.company = document.getElementById('inp_company').value;
+                                                                                                                                        data.relation = document.getElementById('inp_relation').value;
+                                                                                                                                        data.quote = document.getElementById('inp_quote').value;
+                                                                                                                                        data.linkedin = document.getElementById('inp_linkedin').value;
+                                                                                                                                        data.email = document.getElementById('inp_email').value;
 
-        // Clear blob
-        croppedBlob = null;
+                                                                                                                                        // Clear blob
+                                                                                                                                        croppedBlob = null;
     }
 
-    if (docId) {
-        db.collection(currentAdminTab).doc(docId).update(data)
-            .then(() => {
-                alert("Updated!");
-                document.getElementById('adminModal').style.display = 'none';
-            })
-            .catch(err => alert("Error updating: " + err.message));
+                                                                                                                                        if (docId) {
+                                                                                                                                            db.collection(currentAdminTab).doc(docId).update(data)
+                                                                                                                                                .then(() => {
+                                                                                                                                                    alert("Updated!");
+                                                                                                                                                    document.getElementById('adminModal').style.display = 'none';
+                                                                                                                                                })
+                                                                                                                                                .catch(err => alert("Error updating: " + err.message));
     } else {
-        db.collection(currentAdminTab).add(data)
-            .then(() => {
-                alert("Created!");
-                document.getElementById('adminModal').style.display = 'none';
-            })
-            .catch(err => alert("Error creating: " + err.message));
+                                                                                                                                            db.collection(currentAdminTab).add(data)
+                                                                                                                                                .then(() => {
+                                                                                                                                                    alert("Created!");
+                                                                                                                                                    document.getElementById('adminModal').style.display = 'none';
+                                                                                                                                                })
+                                                                                                                                                .catch(err => alert("Error creating: " + err.message));
     }
 }
 
-function deleteItem(docId) {
+                                                                                                                                        function deleteItem(docId) {
     if (confirm("Are you sure you want to delete this item?")) {
-        db.collection(currentAdminTab).doc(docId).delete()
-            .catch(err => alert("Error deleting: " + err.message));
+                                                                                                                                            db.collection(currentAdminTab).doc(docId).delete()
+                                                                                                                                                .catch(err => alert("Error deleting: " + err.message));
     }
 }
 
-async function moveItem(docId, dir) {
+                                                                                                                                        async function moveItem(docId, dir) {
     const items = [...dataCache[currentAdminTab]];
     const idx = items.findIndex(i => i.docId === docId);
-    if (idx === -1) return;
+                                                                                                                                        if (idx === -1) return;
 
-    const tIdx = idx + dir;
-    if (tIdx < 0 || tIdx >= items.length) return;
+                                                                                                                                        const tIdx = idx + dir;
+                                                                                                                                        if (tIdx < 0 || tIdx >= items.length) return;
 
-    // Swap Order Values
-    // Note: This relies on the sort being stable by order
-    // Ideally we should just swap the 'order' fields of the two items
+                                                                                                                                        // Swap Order Values
+                                                                                                                                        // Note: This relies on the sort being stable by order
+                                                                                                                                        // Ideally we should just swap the 'order' fields of the two items
 
-    // Simplified logic: 
-    // 1. Get current order values
-    // 2. Swap them
-    // 3. Update both docs
+                                                                                                                                        // Simplified logic: 
+                                                                                                                                        // 1. Get current order values
+                                                                                                                                        // 2. Swap them
+                                                                                                                                        // 3. Update both docs
 
-    const itemA = items[idx];
-    const itemB = items[tIdx];
+                                                                                                                                        const itemA = items[idx];
+                                                                                                                                        const itemB = items[tIdx];
 
-    const orderA = itemA.order || 0;
-    const orderB = itemB.order || 0;
+                                                                                                                                        const orderA = itemA.order || 0;
+                                                                                                                                        const orderB = itemB.order || 0;
 
-    const batch = db.batch();
+                                                                                                                                        const batch = db.batch();
 
-    // Swap orders
-    // If orders are same (bad data), increment one
-    let newOrderA = orderB;
-    let newOrderB = orderA;
+                                                                                                                                        // Swap orders
+                                                                                                                                        // If orders are same (bad data), increment one
+                                                                                                                                        let newOrderA = orderB;
+                                                                                                                                        let newOrderB = orderA;
 
-    if (newOrderA === newOrderB) {
-        newOrderA = idx + 1 + dir;
-        newOrderB = idx + 1;
+                                                                                                                                        if (newOrderA === newOrderB) {
+                                                                                                                                            newOrderA = idx + 1 + dir;
+                                                                                                                                        newOrderB = idx + 1;
     }
 
-    batch.update(db.collection(currentAdminTab).doc(itemA.docId), { order: newOrderA });
-    batch.update(db.collection(currentAdminTab).doc(itemB.docId), { order: newOrderB });
+                                                                                                                                        batch.update(db.collection(currentAdminTab).doc(itemA.docId), {order: newOrderA });
+                                                                                                                                        batch.update(db.collection(currentAdminTab).doc(itemB.docId), {order: newOrderB });
 
     await batch.commit().catch(err => console.error(err));
 }
 
-// ==========================================
-// NEW: HELPER FUNCTIONS FOR UPLOAD & CROP
-// ==========================================
+                                                                                                                                        // ==========================================
+                                                                                                                                        // NEW: HELPER FUNCTIONS FOR UPLOAD & CROP
+                                                                                                                                        // ==========================================
 
-function uploadFileToStorage(file, path) {
+                                                                                                                                        function uploadFileToStorage(file, path) {
     const ref = storage.ref(path);
     return ref.put(file).then(snapshot => snapshot.ref.getDownloadURL());
 }
 
-async function uploadResume(input) {
+                                                                                                                                        async function uploadResume(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        const btn = input.previousElementSibling;
-        const originalText = btn.innerText;
-        btn.innerText = "Uploading...";
-        btn.disabled = true;
+                                                                                                                                        const btn = input.previousElementSibling;
+                                                                                                                                        const originalText = btn.innerText;
+                                                                                                                                        btn.innerText = "Uploading...";
+                                                                                                                                        btn.disabled = true;
 
-        try {
+                                                                                                                                        try {
             const path = `resumes/${Date.now()}_${file.name}`;
-            const ref = storage.ref(path);
-            const metadata = {
-                contentDisposition: 'attachment; filename="' + file.name + '"'
+                                                                                                                                        const ref = storage.ref(path);
+                                                                                                                                        const metadata = {
+                                                                                                                                            contentDisposition: 'attachment; filename="' + file.name + '"'
             };
-            const snapshot = await ref.put(file, metadata);
-            const url = await snapshot.ref.getDownloadURL();
-            document.getElementById('inp_resumeUrl').value = url;
-            alert("Resume Uploaded!");
+                                                                                                                                        const snapshot = await ref.put(file, metadata);
+                                                                                                                                        const url = await snapshot.ref.getDownloadURL();
+                                                                                                                                        document.getElementById('inp_resumeUrl').value = url;
+                                                                                                                                        alert("Resume Uploaded!");
         } catch (e) {
-            alert("Error: " + e.message);
+                                                                                                                                            alert("Error: " + e.message);
         } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
+                                                                                                                                            btn.innerText = originalText;
+                                                                                                                                        btn.disabled = false;
         }
     }
 }
 
-function startCrop(input) {
+                                                                                                                                        function startCrop(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        const reader = new FileReader();
+                                                                                                                                        const reader = new FileReader();
         reader.onload = (e) => {
             const img = document.getElementById('cropperImage');
-            img.src = e.target.result;
-            document.getElementById('cropperModal').style.display = 'flex';
+                                                                                                                                        img.src = e.target.result;
+                                                                                                                                        document.getElementById('cropperModal').style.display = 'flex';
 
-            if (cropper) cropper.destroy();
-            cropper = new Cropper(img, {
-                aspectRatio: 1, // Square for avatar
-                viewMode: 1
+                                                                                                                                        if (cropper) cropper.destroy();
+                                                                                                                                        cropper = new Cropper(img, {
+                                                                                                                                            aspectRatio: 1, // Square for avatar
+                                                                                                                                        viewMode: 1
             });
         }
-        reader.readAsDataURL(file);
+                                                                                                                                        reader.readAsDataURL(file);
     }
 }
 
-function cancelCrop() {
-    document.getElementById('cropperModal').style.display = 'none';
-    if (cropper) cropper.destroy();
-    document.getElementById('inp_ref_file').value = ''; // Reset input
-    croppedBlob = null;
+                                                                                                                                        function cancelCrop() {
+                                                                                                                                            document.getElementById('cropperModal').style.display = 'none';
+                                                                                                                                        if (cropper) cropper.destroy();
+                                                                                                                                        document.getElementById('inp_ref_file').value = ''; // Reset input
+                                                                                                                                        croppedBlob = null;
 }
 
-function finishCrop() {
+                                                                                                                                        function finishCrop() {
     if (cropper) {
-        cropper.getCroppedCanvas({
-            width: 300,
-            height: 300 // Reasonable size for avatar
-        }).toBlob((blob) => {
-            croppedBlob = blob;
-            document.getElementById('crop_preview_msg').style.display = 'block';
-            document.getElementById('cropperModal').style.display = 'none';
-        });
+                                                                                                                                            cropper.getCroppedCanvas({
+                                                                                                                                                width: 300,
+                                                                                                                                                height: 300 // Reasonable size for avatar
+                                                                                                                                            }).toBlob((blob) => {
+                                                                                                                                                croppedBlob = blob;
+                                                                                                                                                document.getElementById('crop_preview_msg').style.display = 'block';
+                                                                                                                                                document.getElementById('cropperModal').style.display = 'none';
+                                                                                                                                            });
     }
 }

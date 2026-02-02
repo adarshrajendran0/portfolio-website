@@ -26,9 +26,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // FETCH ALL COLLECTIONS (Including Settings)
     ['projects', 'experience', 'education', 'skills', 'references', 'settings'].forEach(col => fetchCollection(col));
-
-
 });
+
+function renderHero() {
+    const config = dataCache.settings.find(item => item.docId === 'config');
+    if (!config) return;
+
+    if (config.heroTitle) document.getElementById('heroTitle').innerHTML = config.heroTitle;
+    if (config.heroDesc) document.getElementById('heroDesc').textContent = config.heroDesc;
+    if (config.heroBadge) {
+        document.getElementById('heroBadge').innerHTML = `
+            <span class="material-symbols-rounded">engineering</span>
+            ${config.heroBadge}
+        `;
+    }
+
+    if (config.stat1Num) document.getElementById('stat1Num').textContent = config.stat1Num;
+    if (config.stat1Label) document.getElementById('stat1Label').textContent = config.stat1Label;
+
+    if (config.stat2Num) document.getElementById('stat2Num').textContent = config.stat2Num;
+    if (config.stat2Label) document.getElementById('stat2Label').textContent = config.stat2Label;
+
+    if (config.stat3Num) document.getElementById('stat3Num').textContent = config.stat3Num;
+    if (config.stat3Label) document.getElementById('stat3Label').textContent = config.stat3Label;
+}
 
 // Helper for Animations (Open/Close)
 function openModal(modalId) {
@@ -85,7 +106,10 @@ function fetchCollection(collectionName) {
         if (collectionName === 'education') renderEducation();
         if (collectionName === 'skills') renderSkills();
         if (collectionName === 'references') renderReferencesModal();
-        if (collectionName === 'settings') renderSettings(); // Update Resume
+        if (collectionName === 'settings') {
+            renderSettings(); // Update Resume
+            renderHero(); // Update Hero
+        }
     });
 }
 
