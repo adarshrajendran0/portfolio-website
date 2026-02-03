@@ -127,7 +127,8 @@ function fetchCollection(collectionName) {
             renderHero(); // Update Hero
         }
         if (collectionName === 'personal') {
-            renderPersonalTabs(); // Initial load
+            renderPersonalTabs();
+            renderPersonalGrid('All');
         }
 
         // Remove from loading set
@@ -268,131 +269,7 @@ function initializeScrollAnimations() { const obs = new IntersectionObserver(e =
 function toggleMobileMenu() { document.querySelector('.nav-links').classList.toggle('active'); }
 function checkVisitorLock() { }
 
-// ==========================================
-// PERSONAL INTERESTS (MINI-BLOG) LOGIC
-// ==========================================
-
-let activePersonalCategory = 'All';
-
-function renderPersonalTabs() {
-    const container = document.getElementById('personalTabs');
-    if (!container) return;
-
-    // 1. Get Unique Categories
-    const categories = new Set(['All']);
-    dataCache.personal.forEach(item => {
-        if (item.category) categories.add(item.category);
-    });
-
-    // 2. Render Tabs
-    container.innerHTML = '';
-    categories.forEach(cat => {
-        const btn = document.createElement('div');
-        btn.className = `category-tab ${cat === activePersonalCategory ? 'active' : ''}`;
-        btn.textContent = cat;
-        btn.onclick = () => {
-            activePersonalCategory = cat;
-            renderPersonalTabs(); // Re-render to update active class
-            renderPersonalGrid();
-        };
-        container.appendChild(btn);
-    });
-
-    // Initial Grid Render
-    renderPersonalGrid();
-}
-
-function renderPersonalGrid() {
-    const container = document.getElementById('personalGrid');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    const items = activePersonalCategory === 'All'
-        ? dataCache.personal
-        : dataCache.personal.filter(i => i.category === activePersonalCategory);
-
-    if (items.length === 0) {
-        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--on-surface-variant);">No items found in this category.</p>';
-        return;
-    }
-
-    items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'personal-card';
-        card.onclick = () => openPersonalDetail(item);
-
-        const thumbUrl = item.thumbnail || convertGoogleDriveLink(item.image) || ''; // Fallback checking 'image' property just in case
-        const thumbHTML = thumbUrl ? `<img src="${thumbUrl}" class="personal-thumb" loading="lazy">` : `<div class="personal-thumb" style="background:var(--tertiary-container); display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:bold;">${item.category || 'Blog'}</div>`;
-
-        card.innerHTML = `
-            ${thumbHTML}
-            <div class="personal-info">
-                <div class="personal-category-badge">${item.category}</div>
-                <div class="personal-title">${item.title}</div>
-                <div class="personal-summary">${item.summary || ''}</div>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-function openPersonalModal() {
-    renderPersonalTabs(); // Ensure fresh render
-    openModal('personalModal');
-}
-
-function closePersonalModal() {
-    closeModal('personalModal');
-}
-
-function openPersonalDetail(item) {
-    const container = document.getElementById('personalDynamicContent');
-    const modal = document.getElementById('personalDetailModal');
-
-    // BUILD CONTENT
-    let html = '';
-
-    // Header Image
-    if (item.thumbnail) {
-        html += `<img src="${item.thumbnail}" class="blog-header-image">`;
-    }
-
-    html += `<div class="blog-content">
-                <h2 class="blog-title">${item.title}</h2>
-                <div class="blog-meta">
-                    <span class="material-symbols-rounded" style="font-size:1.1rem;">category</span> ${item.category}
-                </div>`;
-
-    // Dynamic Blocks
-    if (item.contentBlocks && Array.isArray(item.contentBlocks)) {
-        item.contentBlocks.forEach(block => {
-            if (block.type === 'header') {
-                html += `<h3 class="blog-block-header">${block.text}</h3>`;
-            } else if (block.type === 'paragraph') {
-                html += `<p class="blog-block-paragraph">${block.text}</p>`;
-            } else if (block.type === 'quote') {
-                html += `<blockquote class="blog-block-quote">${block.text}</blockquote>`;
-            } else if (block.type === 'image') {
-                // Check if text is a URL
-                const url = convertGoogleDriveLink(block.text);
-                html += `<img src="${url}" class="blog-block-image" loading="lazy">`;
-            }
-        });
-    } else {
-        // Fallback for simple description if no blocks
-        if (item.description) html += `<p class="blog-block-paragraph">${item.description}</p>`;
-    }
-
-    html += `</div>`; // Close blog-content
-
-    container.innerHTML = html;
-    modal.classList.add('active');
-}
-
-function closePersonalDetail() {
-    closeModal('personalDetailModal');
-}
+// Personal Logic is below (Verified)
 
 // CAROUSEL LOGIC
 let currentSlideIndex = 0;
@@ -600,60 +477,74 @@ function initializeHeroParallax() {
     animate();
 }
 
-// ==========================================
-// PERSONAL INTERESTS (MINI-BLOG) LOGIC
-// ==========================================
+// =========================================
+//  PERSONAL INTERESTS (BEYOND RESUME) LOGIC
+// =========================================
 
-let activePersonalCategory = 'All';
+// 1. The Missing "Open" Function
+function openPersonalModal() {
+    const modal = document.getElementById('personalModal');
+    if (modal) {
+        modal.style.display = 'flex'; // This makes the popup appear
+        renderPersonalTabs(); // Refresh tabs
+        renderPersonalGrid('All'); // Show all cards
+    } else {
+        console.error("Error: 'personalModal' div is missing in HTML");
+    }
+}
 
+function closePersonalModal() {
+    const modal = document.getElementById('personalModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// 2. The Logic to Render Categories (Tabs)
 function renderPersonalTabs() {
     const container = document.getElementById('personalTabs');
     if (!container) return;
 
-    // 1. Get Unique Categories
-    const categories = new Set(['All']);
-    if (dataCache.personal) {
-        dataCache.personal.forEach(item => {
-            if (item.category) categories.add(item.category);
-        });
-    }
+    // Get unique categories from data
+    const categories = ['All', ...new Set(dataCache.personal.map(item => item.category))];
 
-    // 2. Render Tabs
-    container.innerHTML = '';
-    categories.forEach(cat => {
-        const btn = document.createElement('div');
-        btn.className = `category-tab ${cat === activePersonalCategory ? 'active' : ''}`;
-        btn.textContent = cat;
-        btn.onclick = () => {
-            activePersonalCategory = cat;
-            renderPersonalTabs(); // Re-render to update active class
-            renderPersonalGrid();
-        };
-        container.appendChild(btn);
-    });
-
-    // Initial Grid Render
-    renderPersonalGrid();
+    container.innerHTML = categories.map(cat => `
+        <button class="category-tab ${cat === 'All' ? 'active' : ''}" 
+                onclick="filterPersonalGrid('${cat}', this)">
+            ${cat}
+        </button>
+    `).join('');
 }
 
-function renderPersonalGrid() {
-    const container = document.getElementById('personalGrid');
-    if (!container) return;
+// 3. The Logic to Render Cards
+function filterPersonalGrid(category, btnElement) {
+    // Update Active Tab UI
+    if (btnElement) {
+        document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+    }
+    renderPersonalGrid(category);
+}
 
-    container.innerHTML = '';
+function renderPersonalGrid(category) {
+    const grid = document.getElementById('personalGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
 
-    const items = activePersonalCategory === 'All'
-        ? (dataCache.personal || [])
-        : (dataCache.personal || []).filter(i => i.category === activePersonalCategory);
+    // Filter Data
+    const items = category === 'All'
+        ? dataCache.personal
+        : dataCache.personal.filter(item => item.category === category);
 
     if (items.length === 0) {
-        container.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:var(--on-surface-variant);">No items found in this category.</p>';
+        grid.innerHTML = '<p style="text-align:center; color:#666; width:100%;">No stories yet.</p>';
         return;
     }
 
+    // Render Cards
     items.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'personal-card';
+        card.className = 'personal-card'; // We need to style this class
         card.onclick = () => openPersonalDetail(item);
 
         const thumbUrl = item.thumbnail || convertGoogleDriveLink(item.image) || '';
@@ -667,17 +558,8 @@ function renderPersonalGrid() {
                 <div class="personal-summary">${item.summary || ''}</div>
             </div>
         `;
-        container.appendChild(card);
+        grid.appendChild(card);
     });
-}
-
-function openPersonalModal() {
-    renderPersonalTabs(); // Ensure fresh render
-    openModal('personalModal');
-}
-
-function closePersonalModal() {
-    closeModal('personalModal');
 }
 
 function openPersonalDetail(item) {
@@ -762,3 +644,5 @@ function updateThemeIcon(isDark) {
         document.addEventListener('DOMContentLoaded', () => updateThemeIcon(false));
     }
 })();
+console.log("Script.js Loaded Successfully");
+// alert("System Loaded"); // Uncomment this if you need visual validation
