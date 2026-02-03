@@ -127,8 +127,7 @@ function fetchCollection(collectionName) {
             renderHero(); // Update Hero
         }
         if (collectionName === 'personal') {
-            renderPersonalTabs();
-            renderPersonalGrid('All');
+            BlogApp.init(items);
         }
 
         // Remove from loading set
@@ -611,8 +610,142 @@ function closePersonalDetail() {
 }
 
 // =========================================
-// THEME TOGGLE LOGIC
+//  PERSONAL INTERESTS 2.0 (BlogApp Module)
 // =========================================
+const BlogApp = {
+    data: [],
+    activeCategory: 'All',
+
+    init: function (data) {
+        this.data = data || [];
+        // If modal is open, re-render to show updates
+        if (document.getElementById('blogModal') && document.getElementById('blogModal').classList.contains('active')) {
+            this.renderTabs();
+            this.renderGrid();
+        }
+    },
+
+    open: function () {
+        const modal = document.getElementById('blogModal');
+        if (modal) {
+            modal.classList.add('active');
+            this.renderTabs();
+            this.renderGrid();
+        } else {
+            console.error("Blog Modal not found in DOM");
+        }
+    },
+
+    close: function () {
+        const modal = document.getElementById('blogModal');
+        if (modal) {
+            modal.classList.remove('active');
+            // Reset Reader
+            setTimeout(() => this.closeReader(), 300);
+        }
+    },
+
+    renderTabs: function () {
+        const container = document.getElementById('blogTabs');
+        if (!container) return;
+
+        const categories = ['All', ...new Set(this.data.map(item => item.category))];
+
+        container.innerHTML = categories.map(cat => `
+            <button class="category-tab ${cat === this.activeCategory ? 'active' : ''}" 
+                    onclick="BlogApp.setCategory('${cat}')">
+                ${cat}
+            </button>
+        `).join('');
+    },
+
+    setCategory: function (cat) {
+        this.activeCategory = cat;
+        this.renderTabs();
+        this.renderGrid();
+    },
+
+    renderGrid: function () {
+        const container = document.getElementById('blogGrid');
+        if (!container) return;
+
+        const items = this.activeCategory === 'All'
+            ? this.data
+            : this.data.filter(item => item.category === this.activeCategory);
+
+        if (items.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding:2rem; width:100%; color:var(--on-surface-variant);">
+                <span class="material-symbols-rounded" style="font-size:3rem; opacity:0.5;">library_books</span>
+                <p>No stories found in this category.</p>
+            </div>`;
+            return;
+        }
+
+        container.innerHTML = items.map(item => {
+            const thumb = item.thumbnail || convertGoogleDriveLink(item.image);
+            const thumbHTML = thumb
+                ? `<img src="${thumb}" loading="lazy" alt="${item.title}">`
+                : `<div class="placeholder-thumb">${item.category.charAt(0)}</div>`;
+
+            return `
+            <div class="personal-card" onclick="BlogApp.openReader('${item.docId}')">
+                <div class="card-image">${thumbHTML}</div>
+                <div class="card-content">
+                    <span class="status-badge">${item.category}</span>
+                    <h3>${item.title}</h3>
+                    <p>${item.summary || ''}</p>
+                </div>
+            </div>`;
+        }).join('');
+    },
+
+    openReader: function (docId) {
+        const item = this.data.find(i => i.docId === docId);
+        if (!item) return;
+
+        const reader = document.getElementById('blogReader');
+        const content = document.getElementById('blogReaderContent');
+        if (!reader || !content) return;
+
+        reader.classList.add('active');
+
+        // Build Content
+        let html = `
+            <div class="reader-header">
+                <span class="reader-category">${item.category}</span>
+                <h1>${item.title}</h1>
+            </div>
+        `;
+
+        if (item.thumbnail) {
+            html += `<img src="${item.thumbnail}" class="reader-hero-img">`;
+        }
+
+        if (item.contentBlocks && item.contentBlocks.length > 0) {
+            html += '<div class="reader-body">';
+            item.contentBlocks.forEach(block => {
+                if (block.type === 'header') html += `<h3>${block.text}</h3>`;
+                if (block.type === 'paragraph') html += `<p>${block.text}</p>`;
+                if (block.type === 'quote') html += `<blockquote>${block.text}</blockquote>`;
+                if (block.type === 'image') html += `<img src="${convertGoogleDriveLink(block.text)}" class="block-img">`;
+            });
+            html += '</div>';
+        } else {
+            if (item.description) html += `<p>${item.description}</p>`;
+        }
+
+        content.innerHTML = html;
+        reader.scrollTop = 0;
+    },
+
+    closeReader: function () {
+        const reader = document.getElementById('blogReader');
+        if (reader) reader.classList.remove('active');
+    }
+};
+
+// Make Globally Available
+window.BlogApp = BlogApp;
 function toggleTheme() {
     const body = document.body;
     const isDark = body.classList.toggle('dark-mode');

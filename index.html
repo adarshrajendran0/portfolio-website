@@ -92,7 +92,7 @@
                 </div>
 
                 <div style="margin-top: 2rem;">
-                    <button class="btn-secondary" onclick="openPersonalModal()"
+                    <button class="btn-secondary" onclick="BlogApp.open()"
                         style="font-size:0.9rem; padding: 0.6rem 1.2rem; cursor: pointer;">
                         <span class="material-symbols-rounded"
                             style="font-size:1.1rem; vertical-align:middle; margin-right:5px;">person_book</span>
@@ -300,42 +300,38 @@
                 </div>
             </div>
         </div>
-        <!-- PERSONAL INTERESTS MODAL (MAIN) -->
-        <div id="personalModal" class="modal">
-            <div class="modal-content" style="max-width: 900px; height: 85vh; display:flex; flex-direction:column;">
-                <div class="detail-header">
-                    <h2 style="margin:0;">Beyond the Resume</h2>
-                    <button class="close-btn" onclick="closePersonalModal()">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
-                </div>
+    </div>
 
-                <div class="modal-body" style="padding: 0 2rem 2rem 2rem;">
-                    <div class="category-tabs-container">
-                        <div class="category-tabs" id="personalTabs">
-                            <!-- Tabs injected via JS -->
-                        </div>
-                    </div>
-
-                    <div class="personal-grid" id="personalGrid">
-                        <!-- Cards injected via JS -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- PERSONAL DETAIL MODAL (DEEP DIVE) -->
-        <div id="personalDetailModal" class="modal" style="z-index: 2006;">
-            <div class="modal-content" style="max-width: 800px;">
-                <button class="close-btn" onclick="closePersonalDetail()"
-                    style="position:absolute; top:20px; right:20px; z-index:10; background:rgba(255,255,255,0.8);">
-                    <span class="material-symbols-rounded" style="color:#333;">close</span>
+    <!-- BLOG MODAL (Personal Interests 2.0) -->
+    <div id="blogModal" class="modal">
+        <div class="modal-content blog-modal-wrapper">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <h2 class="section-title" style="margin:0; font-size:1.5rem;">Beyond the Resume</h2>
+                <button class="close-btn" onclick="BlogApp.close()">
+                    <span class="material-symbols-rounded">close</span>
                 </button>
-                <div id="personalDynamicContent" class="detail-body" style="padding:0;">
-                    <!-- Dynamic Header image and content blocks go here -->
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body blog-modal-body">
+                <!-- Tabs -->
+                <div class="blog-tabs" id="blogTabs"></div>
+
+                <!-- Grid -->
+                <div class="blog-grid" id="blogGrid"></div>
+
+                <!-- Reader View (Hidden by default, overlays grid) -->
+                <div id="blogReader" class="blog-reader">
+                    <button class="reader-back-btn" onclick="BlogApp.closeReader()">
+                        <span class="material-symbols-rounded">arrow_back</span> Back to Stories
+                    </button>
+                    <div id="blogReaderContent" class="reader-content"></div>
                 </div>
             </div>
         </div>
+    </div>
+
 
     </div>
     </div>
