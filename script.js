@@ -83,6 +83,14 @@ function convertGoogleDriveLink(url) {
     return url;
 }
 
+// LOADER LOGIC
+let loadingCollections = new Set(['projects', 'experience', 'education', 'skills', 'references', 'settings']);
+function hideGlobalLoader() {
+    const loader = document.getElementById('globalLoader');
+    if (loader) loader.style.opacity = '0';
+    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 500);
+}
+
 function fetchCollection(collectionName) {
     db.collection(collectionName).onSnapshot((snapshot) => {
         const items = [];
@@ -110,6 +118,16 @@ function fetchCollection(collectionName) {
             renderSettings(); // Update Resume
             renderHero(); // Update Hero
         }
+
+        // Remove from loading set
+        loadingCollections.delete(collectionName);
+        if (loadingCollections.size === 0) hideGlobalLoader();
+
+    }, (error) => {
+        console.error(`Error fetching ${collectionName}:`, error);
+        // Even if error, remove from loading so we don't get stuck
+        loadingCollections.delete(collectionName);
+        if (loadingCollections.size === 0) hideGlobalLoader();
     });
 }
 
@@ -206,8 +224,26 @@ function createProjectCard(project, isPrivate) {
 }
 
 // [Restored Helper Functions]
-function initializeNavigation() { document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => { document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active')); l.classList.add('active'); })); }
-function initializeSmoothScroll() { document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' }); })); }
+// [Restored Helper Functions]
+function initializeNavigation() {
+    document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => {
+        document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+        l.classList.add('active');
+        // Auto-close mobile menu
+        document.querySelector('.nav-links').classList.remove('active');
+    }));
+}
+function initializeSmoothScroll() {
+    document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+        e.preventDefault();
+        const target = document.querySelector(a.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+            // Ensure menu closes (redundant but safe)
+            document.querySelector('.nav-links').classList.remove('active');
+        }
+    }));
+}
 function initializeScrollAnimations() { const obs = new IntersectionObserver(e => e.forEach(en => { if (en.isIntersecting) { en.target.style.opacity = '1'; en.target.style.transform = 'translateY(0)'; } })); document.querySelectorAll('[data-animate]').forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(30px)'; el.style.transition = 'opacity 0.6s ease, transform 0.6s ease'; obs.observe(el); }); }
 function toggleMobileMenu() { document.querySelector('.nav-links').classList.toggle('active'); }
 function checkVisitorLock() { }
@@ -314,15 +350,15 @@ function initializeHeroParallax() {
         const time = Date.now() / 1000;
 
         cards.forEach((card, index) => {
-            // FIX: Get the EXACT position of the card on the screen right now
-            const rect = card.getBoundingClientRect();
-
             // Calculate the center of the card relative to the viewport
             // We subtract the current transform to get the "resting" position
             // otherwise the card chases itself and glitches
-            const currentTransform = new WebKitCSSMatrix(window.getComputedStyle(card).transform);
-            const cardCenterX = rect.left + (rect.width / 2) - currentTransform.m41;
-            const cardCenterY = rect.top + (rect.height / 2) - currentTransform.m42;
+            const rect = card.getBoundingClientRect();
+            const style = window.getComputedStyle(card);
+            const matrix = new DOMMatrix(style.transform);
+
+            const cardCenterX = rect.left + (rect.width / 2) - matrix.m41;
+            const cardCenterY = rect.top + (rect.height / 2) - matrix.m42;
 
             // 3. Distance to Mouse
             const distX = mouseX - cardCenterX;
