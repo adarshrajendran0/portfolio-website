@@ -93,7 +93,19 @@ function fetchCollection(collectionName) {
         }
 
         dataCache[collectionName] = items;
-        if (currentAdminTab === collectionName) renderAdminList();
+        if (currentAdminTab === collectionName) {
+            if (collectionName === 'settings') {
+                // Re-render settings form if it's open
+                const existingConfig = items.find(i => i.docId === 'config');
+                // Only re-render if the modal is actually open/visible to avoid side effects
+                if (document.getElementById('adminModal').style.display === 'flex') {
+                    document.getElementById('editItemId').value = 'config';
+                    document.getElementById('dynamicFormFields').innerHTML = generateFormFields('settings', existingConfig || {});
+                }
+            } else {
+                renderAdminList();
+            }
+        }
     });
 }
 
