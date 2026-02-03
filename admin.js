@@ -572,8 +572,12 @@ async function saveItemToFirebase() {
     } else {
         db.collection(currentAdminTab).add(data)
             .then(() => {
-                alert("Created!");
+                alert("Item Added!");
                 document.getElementById('adminModal').style.display = 'none';
+                if (currentAdminTab === 'personal') {
+                    // Force refresh for personal tab as it might not trigger same way
+                    setTimeout(renderAdminList, 500);
+                }
             })
             .catch(err => alert("Error creating: " + err.message));
     }
@@ -685,7 +689,8 @@ function startCrop(input) {
 function cancelCrop() {
     document.getElementById('cropperModal').style.display = 'none';
     if (cropper) cropper.destroy();
-    document.getElementById('inp_ref_file').value = ''; // Reset input
+    document.getElementById('inp_ref_file').value = '';
+    if (document.getElementById('inp_per_file')) document.getElementById('inp_per_file').value = ''; // Reset Personal Input
     croppedBlob = null;
 }
 
