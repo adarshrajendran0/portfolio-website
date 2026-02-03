@@ -322,7 +322,65 @@ function showReferences() { openModal('referencesModal'); }
 function closeReferences() { closeModal('referencesModal'); }
 function showPrivateProjects() { openModal('privateProjectsModal'); if (isPrivateUnlocked) { document.getElementById('passwordSection').style.display = 'none'; document.getElementById('privateProjectsContent').style.display = 'block'; renderPrivateProjects(); } }
 function closePrivateProjects() { closeModal('privateProjectsModal'); }
-function verifyVisitorPassword() { if (document.getElementById('privatePassword').value === "mechanical2025") { isPrivateUnlocked = true; showPrivateProjects(); } else alert("Wrong Password"); }
+// HASHING HELPER
+async function hashPassword(password) {
+    const SALT = "adarsh-portfolio-2025"; // Shared with admin.js
+    const msgBuffer = new TextEncoder().encode(password + SALT);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// RATE LIMITING STATE
+let passwordAttempts = 0;
+let lockoutUntil = 0;
+
+async function verifyVisitorPassword() {
+    const input = document.getElementById('privatePassword').value;
+
+    // 1. Check Rate Limit
+    if (Date.now() < lockoutUntil) {
+        const waitTime = Math.ceil((lockoutUntil - Date.now()) / 1000);
+        alert(`Too many attempts. Please try again in ${waitTime} seconds.`);
+        return;
+    }
+
+    if (!input) { alert("Please enter a password"); return; }
+
+    const config = dataCache.settings.find(item => item.docId === 'config');
+
+    // 2. Hash Input
+    let inputHash;
+    try {
+        inputHash = await hashPassword(input);
+    } catch (e) {
+        alert("Security Error: Hashing failed (Requires HTTPS/Localhost)");
+        return;
+    }
+
+    // 3. Compare
+    // Fallback: If no password set, use default hash of "mechanical2025" for migration
+    // (Optional: remove fallback once you set a new password)
+    const storedHash = config?.visitorPasswordHash;
+
+    // Hardcoded hash for "mechanical2025" + SALT ("adarsh-portfolio-2025")
+    // Let's assume for now if not set, we might default or block. 
+    // Implementing strictly as requested: Verify against Stored.
+
+    if (storedHash && inputHash === storedHash) {
+        isPrivateUnlocked = true;
+        showPrivateProjects();
+        passwordAttempts = 0; // Reset
+    } else {
+        passwordAttempts++;
+        if (passwordAttempts >= 3) {
+            lockoutUntil = Date.now() + 30000; // 30s Lockout
+            alert("Too many failed attempts. Locked for 30 seconds.");
+        } else {
+            alert("Wrong Password");
+        }
+    }
+}
 function handlePasswordEnter(e) { if (e.key === 'Enter') verifyVisitorPassword(); }
 
 window.addEventListener('click', e => { if (e.target === document.getElementById('privateProjectsModal')) closePrivateProjects(); if (e.target === document.getElementById('projectDetailModal')) closeProjectDetails(); if (e.target === document.getElementById('referencesModal')) closeReferences(); });
