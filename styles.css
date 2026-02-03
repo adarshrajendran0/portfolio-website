@@ -11,6 +11,14 @@
     --secondary: #535f70;
     --secondary-container: #d7e3f7;
     --on-secondary-container: #1d192b;
+
+    /* NEUTRAL SURFACES */
+    --surface: #fdfcff;
+    --on-surface: #1a1c1e;
+    --surface-variant: #e1e2e5;
+    --on-surface-variant: #444746;
+    --surface-container: #eeeeee;
+    /* Light Gray Pill BG */
     /* Added for Light Mode */
     --tertiary: #6b5778;
     --tertiary-container: #f2daff;
@@ -130,6 +138,10 @@ body.dark-mode {
     /* Global Overrides */
     --on-surface: #e2e2e2;
     --surface: #0b0f14;
+    --surface-variant: #444746;
+    --on-surface-variant: #c4c7c5;
+    --surface-container: #2a2e36;
+    /* Dark Gray Pill BG */
 }
 
 body.dark-mode .visual-card {
@@ -268,8 +280,10 @@ html {
     align-items: center;
     gap: 0.5rem;
     padding: var(--space-xs) var(--space-md);
-    background: var(--tertiary);
-    color: white;
+    background: var(--tertiary-container);
+    /* Use Container for adaptability */
+    color: var(--on-tertiary-container);
+    /* Contrast safe text */
     border: none;
     border-radius: var(--radius-full);
     font-family: var(--font-display);
@@ -279,9 +293,28 @@ html {
 }
 
 .nav-link-special:hover {
-    background: var(--tertiary-container);
-    color: var(--on-tertiary-container);
+    filter: brightness(1.1);
     transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Theme Toggle / Icon Only Button */
+.nav-link-special.icon-only {
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--on-surface);
+    border: 1px solid var(--surface-variant);
+}
+
+.nav-link-special.icon-only:hover {
+    background: var(--surface-container);
+    color: var(--primary);
+    transform: rotate(15deg);
 }
 
 /* Mobile Toggle (Hidden on Desktop) */
@@ -1626,17 +1659,46 @@ section {
     }
 
     /* FIX: Mobile Menu Visibility - Solid Background for readability */
+    /* FIX: Mobile Menu Visibility - Right Side Drawer */
     .nav-links {
         display: none;
-        position: absolute;
-        top: 70px;
-        left: 0;
-        right: 0;
-        background: white;
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        width: 250px;
+        background: var(--card-bg);
+        /* Use theme bg for contrast */
         flex-direction: column;
-        padding: 2rem;
-        border-bottom: 1px solid #ddd;
-        box-shadow: var(--shadow-lg);
+        padding: 1.5rem;
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-xl);
+        z-index: 1000;
+        animation: slideInRight 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .nav-links a {
+        color: var(--on-surface);
+        /* Ensure readable text */
+        border-radius: var(--radius-md);
+        padding: 10px 15px;
+    }
+
+    .nav-links a.active {
+        background: var(--primary-container);
+        color: var(--primary);
     }
 
     .nav-links.active {
@@ -1645,6 +1707,27 @@ section {
 
     .mobile-menu-toggle {
         display: block;
+        color: var(--on-surface);
+    }
+
+    .nav-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    /* Adjust theme toggle for mobile header */
+    .nav-link-special.icon-only {
+        padding: 8px;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        color: var(--on-surface);
+        border: 1px solid var(--card-border);
     }
 
     /* FIX: Force 1-Column Layout on Mobile */

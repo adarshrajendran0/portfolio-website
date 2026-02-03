@@ -23,9 +23,15 @@
                 <span class="logo-text">ADARSH R</span>
                 <span class="logo-subtitle">MECHANICAL ENGINEER</span>
             </div>
-            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
-                <span class="material-symbols-rounded">menu</span>
-            </button>
+            <div class="nav-controls">
+                <button id="themeToggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode"
+                    class="nav-link-special icon-only">
+                    <span class="material-symbols-rounded" id="themeIcon">light_mode</span>
+                </button>
+                <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                    <span class="material-symbols-rounded">menu</span>
+                </button>
+            </div>
             <div class="nav-links">
                 <a href="#hero" class="nav-link active">Home</a>
                 <a href="#experience" class="nav-link">Experience</a>
@@ -35,10 +41,7 @@
                 <button onclick="openModal('privateProjectsModal')" class="nav-link-special">
                     <span class="material-symbols-rounded">lock</span> Private
                 </button>
-                <button id="themeToggle" onclick="toggleTheme()" aria-label="Toggle Dark Mode" class="nav-link-special"
-                    style="margin-left: 10px; padding: 5px 10px;">
-                    <span class="material-symbols-rounded" id="themeIcon">light_mode</span>
-                </button>
+
             </div>
         </div>
     </nav>
