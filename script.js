@@ -26,6 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // FETCH ALL COLLECTIONS (Including Settings)
     ['projects', 'experience', 'education', 'skills', 'references', 'settings'].forEach(col => fetchCollection(col));
+
+    // SAFETY NET: Hide loader after 1.5s max to prevent infinite spinner
+    setTimeout(() => {
+        const loader = document.getElementById('globalLoader');
+        if (loader && loader.style.display !== 'none') { // Check if still visible
+            hideGlobalLoader();
+        }
+    }, 1500);
 });
 
 function renderHero() {
