@@ -2392,3 +2392,34 @@ body.dark-mode .spinner {
     /* Visual alignment */
     flex-shrink: 0;
 }
+
+/* =========================================
+   MOBILE TIMELINE OPTIMIZATION
+   ========================================= */
+@media (max-width: 768px) {
+    .timeline {
+        padding-left: 0 !important;
+        /* Remove left spacing for line */
+    }
+
+    .timeline::before {
+        display: none !important;
+        /* Hide vertical line */
+    }
+
+    .timeline-marker {
+        display: none !important;
+        /* Hide dots */
+    }
+
+    .timeline-item {
+        margin-bottom: 2rem;
+    }
+
+    .experience-card {
+        margin: 0;
+        /* Full width */
+        width: 100%;
+        max-width: 100%;
+    }
+}
