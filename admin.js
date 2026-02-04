@@ -22,7 +22,24 @@ let currentCropTarget = null; // 'references', 'personal', etc.
 let croppedBlob = null;
 
 // 3. Initialization
+// 24. Initialization
 document.addEventListener('DOMContentLoaded', () => {
+    // Check for Redirect Result (Mobile Login Flow)
+    auth.getRedirectResult()
+        .then((result) => {
+            if (result.user) {
+                console.log("Logged in via Redirect:", result.user.email);
+            }
+        })
+        .catch((error) => {
+            console.error("Redirect Login Error:", error);
+            const errorMsg = document.getElementById('loginError');
+            if (errorMsg) {
+                errorMsg.textContent = "Login Failed: " + error.message;
+                errorMsg.style.display = 'block';
+            }
+        });
+
     // Auth Listener
     auth.onAuthStateChanged((user) => {
         const loginSection = document.getElementById('adminLoginSection');
@@ -55,21 +72,31 @@ document.addEventListener('DOMContentLoaded', () => {
 // 4. Auth Functions
 function adminLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider)
-        .then((result) => {
-            console.log("Logged in as:", result.user.email);
-            // onAuthStateChanged will handle the UI switch automatically
-        })
-        .catch((error) => {
-            console.error("Login Error:", error);
-            const errorMsg = document.getElementById('loginError');
-            if (errorMsg) {
-                errorMsg.textContent = "Login Failed: " + error.message;
-                errorMsg.style.display = 'block';
-            } else {
-                alert("Login Failed: " + error.message);
-            }
-        });
+
+    // Detect Mobile (Simple regex check)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile) {
+        // Use Redirect for Mobile
+        auth.signInWithRedirect(provider);
+    } else {
+        // Use Popup for Desktop
+        auth.signInWithPopup(provider)
+            .then((result) => {
+                console.log("Logged in as:", result.user.email);
+                // onAuthStateChanged will handle the UI switch automatically
+            })
+            .catch((error) => {
+                console.error("Login Error:", error);
+                const errorMsg = document.getElementById('loginError');
+                if (errorMsg) {
+                    errorMsg.textContent = "Login Failed: " + error.message;
+                    errorMsg.style.display = 'block';
+                } else {
+                    alert("Login Failed: " + error.message);
+                }
+            });
+    }
 }
 
 // 5. Data Fetching (Read for List)
