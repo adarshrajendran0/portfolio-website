@@ -306,7 +306,8 @@ function generateFormFields(type, data = {}) {
         return `
                                                         <input type="text" id="inp_title" placeholder="Project Title" value="${v('title')}">
                                                             <input type="text" id="inp_desc" placeholder="Short Description" value="${v('description')}">
-                                                                <textarea id="inp_details" placeholder="Detailed Description / Story" rows="5">${v('details')}</textarea>
+                                                            <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Project Story / Details</label>
+                                                            <div id="inp_details" class="quill-editor-container" data-content="${v('details').replace(/"/g, '&quot;')}" style="margin-bottom:15px;"></div>
                                                                 <input type="text" id="inp_link" placeholder="Project Link (URL)" value="${v('link')}">
                                                                     <input type="text" id="inp_tags" placeholder="Tags (comma separated)" value="${(data.tags || []).join(',')}">
 
@@ -394,15 +395,23 @@ function generateFormFields(type, data = {}) {
 
 
     if (type === 'personal') {
-        const blocksHtml = (data.contentBlocks || []).map(b => `
+        const blocksHtml = (data.contentBlocks || []).map((b, idx) => {
+            const isRich = b.type === 'paragraph';
+            const uniqueId = `quill_exist_${Date.now()}_${idx}`;
+
+            const inputField = isRich
+                ? `<div id="${uniqueId}" class="quill-editor-container" data-content="${(b.text || '').replace(/"/g, '&quot;')}" style="background:white;"></div>`
+                : `<input class="form-input block-content" placeholder="Enter content or URL..." value="${b.text}" style="width:100%; border:1px solid #ccc; padding:5px; font-family:inherit;">`;
+
+            return `
             <div class="block-item" data-type="${b.type}" style="background:#f9f9f9; padding:10px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                     <span class="block-label" style="font-size:0.71rem; font-weight:bold; color:#555; text-transform:uppercase;">${b.type}</span>
                     <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;">&times;</button>
                 </div>
-                <input class="form-input block-content" placeholder="Enter content or URL..." value="${b.text}" style="width:100%; border:1px solid #ccc; padding:5px; font-family:inherit;">
-            </div>
-        `).join('');
+                ${inputField}
+            </div>`;
+        }).join('');
 
         return `
             <input type="text" id="inp_perCategory" placeholder="Category (e.g. Travel, Photography)" value="${v('category')}">
@@ -535,7 +544,14 @@ async function saveItemToFirebase() {
 
         data.title = title;
         data.description = document.getElementById('inp_desc').value;
-        data.details = document.getElementById('inp_details').value;
+
+        // Get Rich Details
+        if (quillInstances.has('inp_details')) {
+            data.details = quillInstances.get('inp_details').root.innerHTML;
+        } else {
+            data.details = document.getElementById('inp_details').innerHTML;
+        }
+
         data.link = document.getElementById('inp_link').value;
         data.tags = document.getElementById('inp_tags').value.split(',').map(s => s.trim()).filter(s => s);
         data.images = finalImages;
@@ -803,21 +819,31 @@ function startCrop(input) {
 function addContentBlock(type, value = '') {
     const container = document.getElementById('contentBlocksContainer');
     const div = document.createElement('div');
+    const uniqueId = `quill_block_${Date.now()}`;
     div.className = 'block-item';
     div.dataset.type = type;
     div.style.cssText = "background:#f9f9f9; padding:10px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;";
 
-    let rows = 3;
-    if (type === 'header' || type === 'image') rows = 1;
+    let inputField = '';
+    if (type === 'paragraph') {
+        inputField = `<div id="${uniqueId}" class="quill-editor-container" style="background:white;"></div>`;
+    } else {
+        inputField = `<input class="form-input block-content" placeholder="Enter ${type} content..." value="${value.replace(/"/g, '&quot;')}" style="width:100%; border:1px solid #ccc; padding:5px; font-family:inherit;">`;
+    }
 
     div.innerHTML = `
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <span class="block-label" style="font-size:0.71rem; font-weight:bold; color:#555; text-transform:uppercase;">${type}</span>
             <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;">&times;</button>
         </div>
-        <input class="form-input block-content" placeholder="Enter ${type} content..." value="${value}" style="width:100%; border:1px solid #ccc; padding:5px; font-family:inherit;">
+        ${inputField}
     `;
     container.appendChild(div);
+
+    if (type === 'paragraph') {
+        initQuill(document.getElementById(uniqueId), value);
+    }
+
     // Scroll to bottom
     container.scrollTop = container.scrollHeight;
 }
@@ -825,9 +851,24 @@ function addContentBlock(type, value = '') {
 function getBlocksFromUI() {
     const blocks = [];
     document.querySelectorAll('.block-item').forEach(div => {
+        const type = div.dataset.type;
+        let text = '';
+
+        if (type === 'paragraph') {
+            const quillDiv = div.querySelector('.quill-editor-container');
+            if (quillDiv && quillDiv.id && quillInstances.has(quillDiv.id)) {
+                text = quillInstances.get(quillDiv.id).root.innerHTML;
+            } else {
+                text = quillDiv ? quillDiv.innerHTML : '';
+            }
+        } else {
+            const input = div.querySelector('.block-content');
+            text = input ? input.value : '';
+        }
+
         blocks.push({
-            type: div.dataset.type,
-            text: div.querySelector('.block-content').value
+            type: type,
+            text: text
         });
     });
     return blocks;

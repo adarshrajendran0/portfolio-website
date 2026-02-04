@@ -422,7 +422,7 @@ function openProjectDetails(p, trigger = null) {
     const m = document.getElementById('projectDetailModal');
     document.getElementById('detailTitle').textContent = p.title;
     document.getElementById('detailIcon').textContent = p.icon || 'work';
-    document.getElementById('detailDescription').textContent = p.details || p.description;
+    document.getElementById('detailDescription').innerHTML = p.details || p.description; // HTML Rendering
     document.getElementById('detailTags').innerHTML = (p.tags || []).map(t => `<span class="project-tag">${t}</span>`).join('');
     document.getElementById('detailLinkContainer').innerHTML = `<a href="${p.link || '#'}" target="_blank" class="btn-primary" style="width:100%;justify-content:center;">More Info <span class="material-symbols-rounded">open_in_new</span></a>`;
 
