@@ -323,9 +323,44 @@ function generateFormFields(type, data = {}) {
 
     if (type === 'experience') return `
                                                                         <input type="text" id="inp_role" placeholder="Role / Position" value="${v('role')}">
-                                                                            <input type="text" id="inp_company" placeholder="Company Name" value="${v('company')}">
-                                                                                <input type="text" id="inp_period" placeholder="Duration (e.g. Jan 2023 - Present)" value="${v('period')}">
-                                                                                    <textarea id="inp_highlights" placeholder="Highlights (One per line)" rows="5">${(data.highlights || []).join('\n')}</textarea>`;
+                                                                    <input type="text" id="inp_company" placeholder="Company Name" value="${v('company')}">
+                                                                            <input type="text" id="inp_period" placeholder="Duration (e.g. Jan 2023 - Present)" value="${v('period')}">
+                                                                            
+                                                                            <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Experience Points & Stories</label>
+                                                                            <div id="highlightsContainer" style="margin-bottom:10px;">
+                                                                                ${(data.highlights || []).map(h => {
+        // Handle legacy string vs new object structure
+        const point = typeof h === 'string' ? h : h.point;
+        const story = typeof h === 'string' ? '' : h.story;
+        return `
+                                                                                        <div class="highlight-row" style="background:#f9f9f9; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:10px;">
+                                                                                            <div style="display:flex; gap:10px; margin-bottom:5px;">
+                                                                                                <input type="text" class="inp_highlight_point" placeholder="Bullet Point (Brief)" value="${point}" style="flex-grow:1; font-weight:500;">
+                                                                                                <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;" title="Remove Point">&times;</button>
+                                                                                            </div>
+                                                                                            <textarea class="inp_highlight_story" placeholder="Detail/Story for clickable popup..." style="width:100%; height:60px; font-size:0.9rem;">${story}</textarea>
+                                                                                        </div>
+                                                                                    `;
+    }).join('')}
+                                                                            </div>
+                                                                            <button type="button" class="btn-secondary" onclick="addHighlightRow()">+ Add Point</button>
+                                                                            
+                                                                            <script>
+                                                                                function addHighlightRow() {
+                                                                                    const container = document.getElementById('highlightsContainer');
+                                                                                    const div = document.createElement('div');
+                                                                                    div.className = 'highlight-row';
+                                                                                    div.style = "background:#f9f9f9; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:10px;";
+                                                                                    div.innerHTML = \`
+                                                                                        <div style="display:flex; gap:10px; margin-bottom:5px;">
+                                                                                            <input type="text" class="inp_highlight_point" placeholder="Bullet Point (Brief)" style="flex-grow:1; font-weight:500;">
+                                                                                            <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;" title="Remove Point">&times;</button>
+                                                                                        </div>
+                                                                                        <textarea class="inp_highlight_story" placeholder="Detail/Story for clickable popup..." style="width:100%; height:60px; font-size:0.9rem;"></textarea>
+                                                                                    \`;
+                                                                                    container.appendChild(div);
+                                                                                }
+                                                                            </script>`;
 
     if (type === 'education') return `
                                                                                     <input type="text" id="inp_degree" placeholder="Degree" value="${v('degree')}">
@@ -514,7 +549,17 @@ async function saveItemToFirebase() {
         data.role = document.getElementById('inp_role').value;
         data.company = document.getElementById('inp_company').value;
         data.period = document.getElementById('inp_period').value;
-        data.highlights = document.getElementById('inp_highlights').value.split('\n').filter(s => s.trim());
+
+        // Scrape Dynamic Highlights
+        const highlightRows = document.querySelectorAll('.highlight-row');
+        const highlights = Array.from(highlightRows).map(row => {
+            const point = row.querySelector('.inp_highlight_point').value;
+            const story = row.querySelector('.inp_highlight_story').value;
+            if (point.trim()) return { point, story };
+            return null;
+        }).filter(h => h !== null);
+
+        data.highlights = highlights;
     }
     else if (currentAdminTab === 'education') {
         data.degree = document.getElementById('inp_degree').value;
@@ -772,4 +817,20 @@ function getBlocksFromUI() {
         });
     });
     return blocks;
+}
+
+// HELPER FOR EXPERIENCE FORM
+function addHighlightRow() {
+    const container = document.getElementById('highlightsContainer');
+    const div = document.createElement('div');
+    div.className = 'highlight-row';
+    div.style = "background:#f9f9f9; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:10px;";
+    div.innerHTML = `
+        <div style="display:flex; gap:10px; margin-bottom:5px;">
+            <input type="text" class="inp_highlight_point" placeholder="Bullet Point (Brief)" style="flex-grow:1; font-weight:500;">
+            <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;" title="Remove Point">&times;</button>
+        </div>
+        <textarea class="inp_highlight_story" placeholder="Detail/Story for clickable popup..." style="width:100%; height:60px; font-size:0.9rem;"></textarea>
+    `;
+    container.appendChild(div);
 }

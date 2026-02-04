@@ -313,9 +313,31 @@ function renderExperience() {
     container.innerHTML = '';
     dataCache.experience.forEach((exp, i) => {
         const markerClass = i === 0 ? 'timeline-marker current' : 'timeline-marker';
-        const highlights = (exp.highlights || []).map(h => `<div class="highlight-item"><span class="material-symbols-rounded">arrow_right</span><div>${h}</div></div>`).join('');
+        const highlights = (exp.highlights || []).map(h => {
+            const isObj = typeof h === 'object' && h !== null;
+            const text = isObj ? h.point : h;
+            const story = isObj ? (h.story || '') : '';
+
+            // Encode story for attribute
+            const safeStory = story.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "&#10;");
+            const clickAttr = story ? `onclick="openExperienceStory('${safeStory}', this)"` : '';
+            const classes = `highlight-item ${story ? 'interactive' : ''}`;
+
+            return `<div class="${classes}" ${clickAttr}><span class="material-symbols-rounded">arrow_right</span><div>${text}</div></div>`;
+        }).join('');
         container.innerHTML += `<div class="timeline-item" data-animate><div class="${markerClass}"></div><div class="timeline-content"><div class="experience-card"><div class="exp-header"><div><h3 class="exp-title">${exp.role}</h3><p class="exp-company">${exp.company}</p></div><div class="exp-period"><span class="material-symbols-rounded">schedule</span>${exp.period}</div></div><div class="exp-highlights">${highlights}</div></div></div></div>`;
     });
+}
+function openExperienceStory(story, trigger) {
+    const modal = document.getElementById('experienceStoryModal');
+    const content = document.getElementById('expStoryContent');
+    if (!modal || !content) return;
+
+    content.textContent = story; // Safe text insertion
+    // If you want HTML support in story, use innerHTML but be careful. Text content is safer for now as per "textarea" input.
+
+    // Use the iOS expand animation
+    openModal('experienceStoryModal', trigger);
 }
 function renderEducation() {
     const container = document.getElementById('educationList'); if (!container) return;

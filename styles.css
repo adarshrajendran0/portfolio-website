@@ -2276,3 +2276,30 @@ body.dark-mode .spinner {
     border-radius: 0 12px 12px 0;
     color: var(--on-surface-variant);
 }
+
+/* Interactive Experience Highlights */
+.highlight-item.interactive {
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: var(--primary);
+    text-underline-offset: 4px;
+    transition: all 0.2s ease;
+}
+
+.highlight-item.interactive:hover {
+    color: var(--primary);
+    background: var(--surface-variant);
+    border-radius: 4px;
+}
+
+/* Experience Modal Specifics */
+#expStoryTitle {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+#expStoryContent {
+    white-space: pre-wrap;
+    /* Preserve line breaks */
+}
