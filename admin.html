@@ -308,7 +308,7 @@
                 <div class="admin-modal-content" style="max-width: 800px; width: 95%;">
                     <div class="admin-modal-header">
                         <h3 style="margin:0;">Crop Image</h3>
-                        <button class="btn-icon" onclick="cancelCrop()">
+                        <button class="btn-icon" onclick="window.universalCropper.cancel()">
                             <span class="material-symbols-rounded">close</span>
                         </button>
                     </div>
@@ -317,14 +317,14 @@
                     </div>
                     <div class="admin-modal-actions" style="justify-content: space-between;">
                         <div style="display:flex; gap:10px;">
-                            <button type="button" class="btn-secondary" onclick="setCropRatio(1)"
-                                title="Square Crop">1:1</button>
-                            <button type="button" class="btn-secondary" onclick="setCropRatio(NaN)"
-                                title="Free Crop">Free</button>
+                            <button type="button" class="btn-secondary"
+                                onclick="window.universalCropper.setAspectRatio(1)" title="Square Crop">1:1</button>
+                            <button type="button" class="btn-secondary"
+                                onclick="window.universalCropper.setAspectRatio(NaN)" title="Free Crop">Free</button>
                         </div>
                         <div style="display:flex; gap:10px;">
-                            <button class="btn-secondary" onclick="cancelCrop()">Cancel</button>
-                            <button class="btn-primary" onclick="finishCrop()">Crop & Use</button>
+                            <button class="btn-secondary" onclick="window.universalCropper.cancel()">Cancel</button>
+                            <button class="btn-primary" onclick="window.universalCropper.finish()">Crop & Use</button>
                         </div>
                     </div>
                 </div>
@@ -339,9 +339,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <!-- Note: Storage SDK was not in original, but instructions mentioned handleImageUpload logic which typically uses it, 
-         however original script.js didn't have it either. I'll include it just in case for future. -->
-
+    <script src="universal_cropper.js"></script>
     <script src="admin.js?v=3"></script>
 
 </body>

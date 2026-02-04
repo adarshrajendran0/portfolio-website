@@ -667,97 +667,82 @@ async function uploadResume(input) {
 function startCrop(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = document.getElementById('cropperImage');
-            img.src = e.target.result;
-            document.getElementById('cropperModal').style.display = 'flex';
 
-            if (cropper) cropper.destroy();
-            cropper = new Cropper(img, {
-                aspectRatio: 1, // Default to Square
-                viewMode: 1
-            });
+        // Use the universal cropper
+        if (window.universalCropper) {
+            window.universalCropper.start(file)
+                .then(blob => {
+                    croppedBlob = blob;
+
+                    // Update UI feedback
+                    // In the HTML structure, the preview message is usually the next element or close by
+                    // References: input -> div#crop_preview_msg
+                    // Personal: input -> div#crop_preview_msg
+
+                    // Let's find the message element relative to input
+                    const parent = input.parentElement;
+                    const msg = parent.querySelector('#crop_preview_msg') || input.nextElementSibling;
+
+                    if (msg) {
+                        msg.style.display = 'block';
+                        msg.textContent = "Image Cropped & Ready to Upload!";
+                        msg.style.color = 'green';
+                    }
+                })
+                .catch(err => {
+                    console.log("Crop cancelled or failed:", err);
+                    input.value = ''; // Reset input to allow re-selecting
+                    croppedBlob = null;
+
+                    const parent = input.parentElement;
+                    const msg = parent.querySelector('#crop_preview_msg') || input.nextElementSibling;
+                    if (msg) msg.style.display = 'none';
+                });
+        } else {
+            console.error("UniversalCropper not initialized");
+            alert("Error: Cropper not ready. Please refresh.");
         }
-        reader.readAsDataURL(file);
     }
 }
 
-function cancelCrop() {
-    document.getElementById('cropperModal').style.display = 'none';
-    if (cropper) cropper.destroy();
+// Note: cancelCrop and finishCrop are no longer needed as global functions 
+// because the UniversalCropper class and the buttons in HTML handle the flow.
+// The finish action resolves the promise in startCrop, which sets the global croppedBlob.
 
-    // Safely reset inputs if they exist
-    const refInput = document.getElementById('inp_ref_file');
-    if (refInput) refInput.value = '';
 
-    const perInput = document.getElementById('inp_per_file');
-    if (perInput) perInput.value = '';
+// ==========================================
+// NEW: CONTENT BUILDER HELPERS
+// ==========================================
 
-    croppedBlob = null;
-}
+function addContentBlock(type, value = '') {
+    const container = document.getElementById('contentBlocksContainer');
+    const div = document.createElement('div');
+    div.className = 'block-item';
+    div.dataset.type = type;
+    div.style.cssText = "background:#f9f9f9; padding:10px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;";
 
-function finishCrop() {
-    if (cropper) {
-        function setCropRatio(ratio) {
-            if (cropper) {
-                cropper.setAspectRatio(ratio);
-            }
-        }
+    let rows = 3;
+    if (type === 'header' || type === 'image') rows = 1;
 
-        function finishCrop() {
-            if (cropper) {
-                // If Free crop, don't force specific width/height, just max logic or natural
-                // But for consistency let's limit max dimension if needed, or just let it be.
-                // For avatars 300x300 is good. For blog thumbnails, maybe 16:9 or similar.
-
-                // Let's use flexible export
-                cropper.getCroppedCanvas({
-                    // No forced width/height here means it outputs the cropped area at natural resolution
-                    // We can throttle max width if needed
-                    maxWidth: 800,
-                    maxHeight: 800
-                }).toBlob((blob) => {
-                    croppedBlob = blob;
-                    document.getElementById('crop_preview_msg').style.display = 'block';
-                    document.getElementById('cropperModal').style.display = 'none';
-                }, 'image/jpeg', 0.9);
-            }
-        }
-
-        // ==========================================
-        // NEW: CONTENT BUILDER HELPERS
-        // ==========================================
-
-        function addContentBlock(type, value = '') {
-            const container = document.getElementById('contentBlocksContainer');
-            const div = document.createElement('div');
-            div.className = 'block-item';
-            div.dataset.type = type;
-            div.style.cssText = "background:#f9f9f9; padding:10px; margin-bottom:5px; border:1px solid #ddd; border-radius:4px;";
-
-            let rows = 3;
-            if (type === 'header' || type === 'image') rows = 1;
-
-            div.innerHTML = `
+    div.innerHTML = `
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <span class="block-label" style="font-size:0.71rem; font-weight:bold; color:#555; text-transform:uppercase;">${type}</span>
             <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;">&times;</button>
         </div>
         <input class="form-input block-content" placeholder="Enter ${type} content..." value="${value}" style="width:100%; border:1px solid #ccc; padding:5px; font-family:inherit;">
     `;
-            container.appendChild(div);
-            // Scroll to bottom
-            container.scrollTop = container.scrollHeight;
-        }
+    container.appendChild(div);
+    // Scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
 
-        function getBlocksFromUI() {
-            const blocks = [];
-            document.querySelectorAll('.block-item').forEach(div => {
-                blocks.push({
-                    type: div.dataset.type,
-                    text: div.querySelector('.block-content').value
-                });
-            });
-            return blocks;
-        }
+function getBlocksFromUI() {
+    const blocks = [];
+    document.querySelectorAll('.block-item').forEach(div => {
+        blocks.push({
+            type: div.dataset.type,
+            text: div.querySelector('.block-content').value
+        });
+    });
+    return blocks;
+}
