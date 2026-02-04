@@ -20,6 +20,7 @@ let currentAdminTab = 'projects';
 let dataCache = { projects: [], experience: [], education: [], skills: [], references: [], settings: [], personal: [] };
 let currentCropTarget = null; // 'references', 'personal', etc.
 let croppedBlob = null;
+let quillInstances = new Map(); // Store Quill instances by ID
 
 // 3. Initialization
 // 24. Initialization
@@ -202,6 +203,11 @@ function showAddItemForm(isSettings = false) {
     if (!isSettings) {
         document.getElementById('editItemId').value = '';
         document.getElementById('dynamicFormFields').innerHTML = generateFormFields(currentAdminTab);
+
+        // Initialize rich text editors if present
+        document.querySelectorAll('.quill-editor-container').forEach(el => {
+            initQuill(el, el.dataset.content || '');
+        });
     }
 }
 
@@ -217,6 +223,11 @@ function editItem(docId) {
     document.getElementById('adminModal').style.display = 'flex';
     document.getElementById('editItemId').value = docId;
     document.getElementById('dynamicFormFields').innerHTML = generateFormFields(currentAdminTab, item);
+
+    // Initialize rich text editors if present
+    document.querySelectorAll('.quill-editor-container').forEach(el => {
+        initQuill(el, el.dataset.content || '');
+    });
 }
 
 function generateFormFields(type, data = {}) {
@@ -328,17 +339,19 @@ function generateFormFields(type, data = {}) {
                                                                             
                                                                             <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Experience Points & Stories</label>
                                                                             <div id="highlightsContainer" style="margin-bottom:10px;">
-                                                                                ${(data.highlights || []).map(h => {
-        // Handle legacy string vs new object structure
+                                                                                ${(data.highlights || []).map((h, index) => {
         const point = typeof h === 'string' ? h : h.point;
         const story = typeof h === 'string' ? '' : h.story;
+        // Use unique ID for Quill
+        const editorId = `quill_exp_${Date.now()}_${index}`;
+        // Store content in data attribute for initialization
         return `
                                                                                         <div class="highlight-row" style="background:#f9f9f9; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:10px;">
                                                                                             <div style="display:flex; gap:10px; margin-bottom:5px;">
                                                                                                 <input type="text" class="inp_highlight_point" placeholder="Bullet Point (Brief)" value="${point}" style="flex-grow:1; font-weight:500;">
                                                                                                 <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;" title="Remove Point">&times;</button>
                                                                                             </div>
-                                                                                            <textarea class="inp_highlight_story" placeholder="Detail/Story for clickable popup..." style="width:100%; height:60px; font-size:0.9rem;">${story}</textarea>
+                                                                                            <div id="${editorId}" class="quill-editor-container" data-content="${story.replace(/"/g, '&quot;')}"></div>
                                                                                         </div>
                                                                                     `;
     }).join('')}
@@ -346,20 +359,7 @@ function generateFormFields(type, data = {}) {
                                                                             <button type="button" class="btn-secondary" onclick="addHighlightRow()">+ Add Point</button>
                                                                             
                                                                             <script>
-                                                                                function addHighlightRow() {
-                                                                                    const container = document.getElementById('highlightsContainer');
-                                                                                    const div = document.createElement('div');
-                                                                                    div.className = 'highlight-row';
-                                                                                    div.style = "background:#f9f9f9; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:10px;";
-                                                                                    div.innerHTML = \`
-                                                                                        <div style="display:flex; gap:10px; margin-bottom:5px;">
-                                                                                            <input type="text" class="inp_highlight_point" placeholder="Bullet Point (Brief)" style="flex-grow:1; font-weight:500;">
-                                                                                            <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;" title="Remove Point">&times;</button>
-                                                                                        </div>
-                                                                                        <textarea class="inp_highlight_story" placeholder="Detail/Story for clickable popup..." style="width:100%; height:60px; font-size:0.9rem;"></textarea>
-                                                                                    \`;
-                                                                                    container.appendChild(div);
-                                                                                }
+                                                                                // This script will NOT run via innerHTML, we handle init in renderAdminTab
                                                                             </script>`;
 
     if (type === 'education') return `
@@ -554,7 +554,21 @@ async function saveItemToFirebase() {
         const highlightRows = document.querySelectorAll('.highlight-row');
         const highlights = Array.from(highlightRows).map(row => {
             const point = row.querySelector('.inp_highlight_point').value;
-            const story = row.querySelector('.inp_highlight_story').value;
+
+            // Get Quill Content
+            const quillContainer = row.querySelector('.quill-editor-container');
+            let story = '';
+            if (quillContainer && quillContainer.id && quillInstances.has(quillContainer.id)) {
+                const q = quillInstances.get(quillContainer.id);
+                // check if empty
+                if (q.getText().trim().length > 0) {
+                    story = q.root.innerHTML;
+                }
+            } else {
+                // Fallback if somehow not initialized (should not happen)
+                story = quillContainer ? quillContainer.innerHTML : '';
+            }
+
             if (point.trim()) return { point, story };
             return null;
         }).filter(h => h !== null);
@@ -823,6 +837,7 @@ function getBlocksFromUI() {
 function addHighlightRow() {
     const container = document.getElementById('highlightsContainer');
     const div = document.createElement('div');
+    const uniqueId = `quill_exp_${Date.now()}`;
     div.className = 'highlight-row';
     div.style = "background:#f9f9f9; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:10px;";
     div.innerHTML = `
@@ -830,7 +845,45 @@ function addHighlightRow() {
             <input type="text" class="inp_highlight_point" placeholder="Bullet Point (Brief)" style="flex-grow:1; font-weight:500;">
             <button onclick="this.parentElement.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer;" title="Remove Point">&times;</button>
         </div>
-        <textarea class="inp_highlight_story" placeholder="Detail/Story for clickable popup..." style="width:100%; height:60px; font-size:0.9rem;"></textarea>
+        <div id="${uniqueId}" class="quill-editor-container" style="background:white;"></div>
     `;
     container.appendChild(div);
+
+    // Init Quill
+    initQuill(document.getElementById(uniqueId));
+}
+
+// HELPER FOR RICH TEXT
+function initQuill(selectorOrElement, content = '') {
+    const element = typeof selectorOrElement === 'string'
+        ? document.querySelector(selectorOrElement)
+        : selectorOrElement;
+
+    if (!element) return null;
+
+    // Check if already initialized
+    if (element.classList.contains('ql-container')) return null;
+
+    const quill = new Quill(element, {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                [{ 'align': [] }],
+                ['link', 'clean']
+            ]
+        }
+    });
+
+    if (content) {
+        quill.clipboard.dangerouslyPasteHTML(content);
+    }
+
+    // Store reference using ID
+    if (element.id) {
+        quillInstances.set(element.id, quill);
+    }
+
+    return quill;
 }

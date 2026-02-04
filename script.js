@@ -319,8 +319,8 @@ function renderExperience() {
             const story = isObj ? (h.story || '') : '';
 
             // Encode story for attribute
-            const safeStory = story.replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\n/g, "&#10;");
-            const clickAttr = story ? `onclick="openExperienceStory('${safeStory}', this)"` : '';
+            const safeStory = story.replace(/"/g, '&quot;');
+            const clickAttr = story ? `onclick="openExperienceStory(this)" data-story="${safeStory}"` : '';
             const classes = `highlight-item ${story ? 'interactive' : ''}`;
 
             return `<div class="${classes}" ${clickAttr}><span class="material-symbols-rounded">arrow_right</span><div>${text}</div></div>`;
@@ -328,13 +328,14 @@ function renderExperience() {
         container.innerHTML += `<div class="timeline-item" data-animate><div class="${markerClass}"></div><div class="timeline-content"><div class="experience-card"><div class="exp-header"><div><h3 class="exp-title">${exp.role}</h3><p class="exp-company">${exp.company}</p></div><div class="exp-period"><span class="material-symbols-rounded">schedule</span>${exp.period}</div></div><div class="exp-highlights">${highlights}</div></div></div></div>`;
     });
 }
-function openExperienceStory(story, trigger) {
+function openExperienceStory(trigger) {
     const modal = document.getElementById('experienceStoryModal');
     const content = document.getElementById('expStoryContent');
+    const story = trigger ? trigger.getAttribute('data-story') : '';
+
     if (!modal || !content) return;
 
-    content.textContent = story; // Safe text insertion
-    // If you want HTML support in story, use innerHTML but be careful. Text content is safer for now as per "textarea" input.
+    content.innerHTML = story; // Render HTML (Rich Text)
 
     // Use the iOS expand animation
     openModal('experienceStoryModal', trigger);
