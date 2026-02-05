@@ -355,7 +355,20 @@ function openEducationDetail(docId) {
 
     if (!item) return;
 
-    // Reuse the Blog Reader Modal
+    // 1. Check for Nested Stories (Education Stories)
+    const nestedStories = (dataCache.edu_stories || []).filter(s => s.parentId === docId);
+
+    if (nestedStories.length > 0) {
+        // --- MODE A: Nested Portfolio (Gallery) ---
+        // Reuse BlogApp to show these stories
+        BlogApp.init(nestedStories);
+        BlogApp.open();
+
+        // Optional: We could update the modal title to "${item.degree} Gallery" if BlogApp allows
+        return;
+    }
+
+    // --- MODE B: Standard Deep Dive (Reader) ---
     const reader = document.getElementById('blogReader');
     const content = document.getElementById('blogReaderContent');
     if (!reader || !content) return;
