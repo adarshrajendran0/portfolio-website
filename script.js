@@ -762,7 +762,6 @@ const BlogApp = {
 
     init: function (data) {
         this.data = data || [];
-        // If modal is open, re-render to show updates
         if (document.getElementById('blogModal') && document.getElementById('blogModal').classList.contains('active')) {
             this.renderTabs();
             this.renderGrid();
@@ -772,10 +771,7 @@ const BlogApp = {
     open: function (trigger = null) {
         const modal = document.getElementById('blogModal');
         if (modal) {
-            // Pass trigger to generic open
             openModal('blogModal', trigger);
-
-            // Still run internal logic
             this.renderTabs();
             this.renderGrid();
         } else {
@@ -785,16 +781,13 @@ const BlogApp = {
 
     close: function () {
         closeModal('blogModal');
-        // Reset Reader
         setTimeout(() => this.closeReader(), 300);
     },
 
     renderTabs: function () {
         const container = document.getElementById('blogTabs');
         if (!container) return;
-
         const categories = ['All', ...new Set(this.data.map(item => item.category))];
-
         container.innerHTML = categories.map(cat => `
             <button class="category-tab ${cat === this.activeCategory ? 'active' : ''}" 
                     onclick="BlogApp.setCategory('${cat}')">
@@ -826,14 +819,36 @@ const BlogApp = {
         }
 
         container.innerHTML = items.map(item => {
-            const thumb = item.thumbnail || convertGoogleDriveLink(item.image);
-            const thumbHTML = thumb
-                ? `<img src="${thumb}" loading="lazy" alt="${item.title}">`
-                : `<div class="placeholder-thumb">${item.category.charAt(0)}</div>`;
+            // Check for multiple images
+            let mediaHTML = '';
+            const images = item.images || [];
+
+            if (images.length > 0) {
+                // Scrollable Images
+                const imagesHTML = images.map((img, idx) => `
+                    <img src="${convertGoogleDriveLink(img)}" loading="lazy" 
+                         onclick="event.stopPropagation(); openLightboxForStory('${item.docId}', ${idx})">
+                 `).join('');
+
+                // Add Thumbnail if not in images? (Usually thumbnail is cover, might be duplicate. Prefer using images array if exists)
+                // Or prepend thumbnail? "keep the image sizing as same as what we have currently"
+
+                mediaHTML = `
+                    <div class="scrolling-image-container">
+                        ${imagesHTML}
+                        ${images.length > 1 ? `<div class="scrolling-image-indicator">${images.length} Photos</div>` : ''}
+                    </div>`;
+            } else {
+                // Fallback to Single Thumbnail
+                const thumb = item.thumbnail || convertGoogleDriveLink(item.image);
+                mediaHTML = thumb
+                    ? `<div class="card-image"><img src="${thumb}" loading="lazy" alt="${item.title}"></div>`
+                    : `<div class="card-image"><div class="placeholder-thumb">${item.category.charAt(0)}</div></div>`;
+            }
 
             return `
             <div class="personal-card" onclick="BlogApp.openReader('${item.docId}', this)">
-                <div class="card-image">${thumbHTML}</div>
+                ${mediaHTML}
                 <div class="card-content">
                     <span class="status-badge">${item.category}</span>
                     <h3>${item.title}</h3>
@@ -861,7 +876,20 @@ const BlogApp = {
             </div>
         `;
 
-        if (item.thumbnail) {
+        // Reader Gallery (Horizontal Scroll)
+        const images = item.images || [];
+        if (images.length > 0) {
+            const imagesHTML = images.map((img, idx) => `
+                <img src="${convertGoogleDriveLink(img)}" 
+                     onclick="openLightboxForStory('${item.docId}', ${idx})"
+                     style="min-width:100%; height:300px; object-fit:cover; cursor:zoom-in;">
+             `).join('');
+
+            html += `
+                <div class="scrolling-image-container" style="height:300px; margin-bottom:20px;">
+                    ${imagesHTML}
+                </div>`;
+        } else if (item.thumbnail) {
             html += `<img src="${item.thumbnail}" class="reader-hero-img">`;
         }
 
@@ -887,6 +915,69 @@ const BlogApp = {
         if (reader) reader.classList.remove('active');
     }
 };
+
+// =========================================
+//  LIGHTBOX UTILITY (Global)
+// =========================================
+let lightboxImages = [];
+let lightboxIndex = 0;
+
+function openLightbox(images, index = 0) {
+    if (!images || images.length === 0) return;
+    lightboxImages = images;
+    lightboxIndex = index;
+
+    document.getElementById('lightboxModal').style.display = "block";
+    updateLightboxUI();
+
+    // Keyboard Nav
+    document.addEventListener('keydown', handleLightboxKey);
+}
+
+function openLightboxForStory(docId, index = 0) {
+    // Find item
+    let item = BlogApp.data.find(i => i.docId === docId);
+    if (!item && dataCache && dataCache.personal) {
+        item = dataCache.personal.find(i => i.docId === docId);
+    }
+
+    if (item && item.images && item.images.length > 0) {
+        openLightbox(item.images.map(convertGoogleDriveLink), index);
+    } else if (item && item.thumbnail) {
+        openLightbox([item.thumbnail], 0);
+    }
+}
+
+function closeLightbox() {
+    document.getElementById('lightboxModal').style.display = "none";
+    document.removeEventListener('keydown', handleLightboxKey);
+}
+
+function changeLightboxImage(n) {
+    let newIndex = lightboxIndex + n;
+    if (newIndex >= lightboxImages.length) newIndex = 0;
+    if (newIndex < 0) newIndex = lightboxImages.length - 1;
+    lightboxIndex = newIndex;
+    updateLightboxUI();
+}
+
+function updateLightboxUI() {
+    const img = document.getElementById('lightboxImage');
+    img.src = lightboxImages[lightboxIndex];
+
+    const caption = document.getElementById('lightboxCaption');
+    if (lightboxImages.length > 1) {
+        caption.innerText = `${lightboxIndex + 1} / ${lightboxImages.length}`;
+    } else {
+        caption.innerText = "";
+    }
+}
+
+function handleLightboxKey(e) {
+    if (e.key === "ArrowLeft") changeLightboxImage(-1);
+    if (e.key === "ArrowRight") changeLightboxImage(1);
+    if (e.key === "Escape") closeLightbox();
+}
 
 // Make Globally Available
 window.BlogApp = BlogApp;

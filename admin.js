@@ -395,6 +395,14 @@ function generateFormFields(type, data = {}) {
 
 
     if (type === 'personal') {
+        const existingImages = data.images || [];
+        const existingImagesHTML = existingImages.map(url => `
+            <div class="existing-image" style="display:flex; align-items:center; gap:10px; margin-bottom:5px; background:#f5f5f5; padding:5px; border-radius:6px;">
+                <img src="${url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                <input type="text" class="inp_existing_image" value="${url}" readonly style="flex-grow:1; font-size:0.8rem; border:none; background:transparent;">
+                <button onclick="this.parentElement.remove()" style="color:red; cursor:pointer; border:none; background:transparent;">&times;</button>
+            </div>`).join('');
+
         const blocksHtml = (data.contentBlocks || []).map((b, idx) => {
             const isRich = b.type === 'paragraph';
             const uniqueId = `quill_exist_${Date.now()}_${idx}`;
@@ -418,7 +426,7 @@ function generateFormFields(type, data = {}) {
             <input type="text" id="inp_perTitle" placeholder="Card Title" value="${v('title')}">
             <input type="text" id="inp_perSummary" placeholder="Short Summary" value="${v('summary')}">
             
-            <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Thumbnail Image</label>
+            <label style="display:block;margin-top:10px;margin-bottom:5px;font-weight:600;">Thumbnail Image (Cover)</label>
             <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
                 ${v('thumbnail') ? `<img src="${v('thumbnail')}" style="width:50px; height:50px; border-radius:6px; object-fit:cover;">` : ''}
                 <input type="text" id="inp_perThumbnail" placeholder="Image URL" value="${v('thumbnail')}" style="flex-grow:1; margin:0;" readonly>
@@ -426,6 +434,13 @@ function generateFormFields(type, data = {}) {
              <button class="btn-secondary" onclick="document.getElementById('inp_per_file').click()" style="margin-bottom:10px; font-size:0.8rem;">Upload & Crop Thumbnail</button>
              <input type="file" id="inp_per_file" accept="image/*" style="display:none;" onchange="startCrop(this)">
              <div id="crop_preview_msg" style="color:green; font-weight:bold; font-size:0.8rem; display:none;">Thumbnail Cropped!</div>
+
+             <label style="display:block;margin-top:20px;margin-bottom:5px;font-weight:600;">Gallery Images (Multiple)</label>
+             <div id="existingImagesList">${existingImagesHTML}</div>
+             <div style="background:#e3f2fd; padding:15px; border-radius:8px; border:2px dashed #90caf9; text-align:center; margin-top:10px;">
+                <p style="margin-bottom:10px; font-weight:500; color:#1565c0;">Upload Gallery Images</p>
+                <input type="file" id="inp_per_gallery_files" multiple accept="image/*" style="display:block; margin:auto;">
+             </div>
 
             <hr style="margin:20px 0; border:0; border-top:1px solid #ddd;">
             <h4 style="margin-bottom:10px;">Deep Dive Content (Builder)</h4>
@@ -443,6 +458,10 @@ function generateFormFields(type, data = {}) {
 
     return '';
 }
+
+
+
+
 
 // HASHING UTILITY
 async function hashPassword(password) {
@@ -640,6 +659,7 @@ async function saveItemToFirebase() {
         data.summary = document.getElementById('inp_perSummary').value;
         if (!data.title) { alert("Title is required"); return; }
 
+        // --- 1. Thumbnail Upload ---
         if (croppedBlob) {
             const saveBtn = document.querySelector('#adminModal .btn-primary');
             saveBtn.innerText = "Uploading Thumbnail...";
@@ -658,6 +678,32 @@ async function saveItemToFirebase() {
             // Keep existing or empty
             data.thumbnail = document.getElementById('inp_perThumbnail').value;
         }
+
+        // --- 2. Gallery Images Upload ---
+        const existingInputs = document.querySelectorAll('.inp_existing_image');
+        let finalImages = Array.from(existingInputs).map(inp => inp.value);
+
+        const galleryInput = document.getElementById('inp_per_gallery_files');
+        if (galleryInput && galleryInput.files.length > 0) {
+            const saveBtn = document.querySelector('#adminModal .btn-primary');
+            saveBtn.innerText = "Uploading Gallery...";
+            saveBtn.disabled = true;
+            try {
+                const uploadPromises = Array.from(galleryInput.files).map((file, index) => {
+                    const uniqueName = `personal_gallery/${data.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}_${index}`;
+                    return uploadFileToStorage(file, uniqueName);
+                });
+                const newUrls = await Promise.all(uploadPromises);
+                finalImages = [...finalImages, ...newUrls];
+            } catch (e) {
+                alert("Gallery Upload Failed: " + e.message);
+                saveBtn.innerText = "Save Changes";
+                saveBtn.disabled = false;
+                return;
+            }
+        }
+        data.images = finalImages;
+
 
         data.contentBlocks = getBlocksFromUI();
         croppedBlob = null;
