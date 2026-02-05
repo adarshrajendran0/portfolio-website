@@ -396,12 +396,28 @@ function generateFormFields(type, data = {}) {
 
     if (type === 'personal') {
         const existingImages = data.images || [];
-        const existingImagesHTML = existingImages.map(url => `
+        const existingImagesHTML = existingImages.map(img => {
+            const url = typeof img === 'string' ? img : img.url;
+            const inCarousel = typeof img === 'string' ? true : (img.inCarousel !== false); // Default True
+
+            return `
             <div class="existing-image" style="display:flex; align-items:center; gap:10px; margin-bottom:5px; background:#f5f5f5; padding:5px; border-radius:6px;">
                 <img src="${url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
-                <input type="text" class="inp_existing_image" value="${url}" readonly style="flex-grow:1; font-size:0.8rem; border:none; background:transparent;">
+                <div style="flex-grow:1;">
+                    <input type="text" class="inp_existing_image" value="${url}" readonly style="width:100%; font-size:0.8rem; border:none; background:transparent; margin-bottom:2px;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <label style="font-size:0.75rem; cursor:pointer; user-select:none;">
+                            <input type="checkbox" class="inp_img_carousel" ${inCarousel ? 'checked' : ''}> Show in Header
+                        </label>
+                        <button onclick="navigator.clipboard.writeText('${url}'); alert('Copied!');" 
+                                style="font-size:0.75rem; padding:2px 6px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer;">
+                            Copy Link
+                        </button>
+                    </div>
+                </div>
                 <button onclick="this.parentElement.remove()" style="color:red; cursor:pointer; border:none; background:transparent;">&times;</button>
-            </div>`).join('');
+            </div>`;
+        }).join('');
 
         const blocksHtml = (data.contentBlocks || []).map((b, idx) => {
             const isRich = b.type === 'paragraph';
@@ -680,8 +696,12 @@ async function saveItemToFirebase() {
         }
 
         // --- 2. Gallery Images Upload ---
-        const existingInputs = document.querySelectorAll('.inp_existing_image');
-        let finalImages = Array.from(existingInputs).map(inp => inp.value);
+        const existingImageDivs = document.querySelectorAll('.existing-image');
+        let finalImages = Array.from(existingImageDivs).map(div => {
+            const url = div.querySelector('.inp_existing_image').value;
+            const inCarousel = div.querySelector('.inp_img_carousel').checked;
+            return { url, inCarousel };
+        });
 
         const galleryInput = document.getElementById('inp_per_gallery_files');
         if (galleryInput && galleryInput.files.length > 0) {
@@ -694,7 +714,14 @@ async function saveItemToFirebase() {
                     return uploadFileToStorage(file, uniqueName);
                 });
                 const newUrls = await Promise.all(uploadPromises);
-                finalImages = [...finalImages, ...newUrls];
+
+                // Add new images (Default: inCarousel = true)
+                const newImageObjects = newUrls.map(url => ({
+                    url: url,
+                    inCarousel: true
+                }));
+
+                finalImages = [...finalImages, ...newImageObjects];
             } catch (e) {
                 alert("Gallery Upload Failed: " + e.message);
                 saveBtn.innerText = "Save Changes";

@@ -819,36 +819,23 @@ const BlogApp = {
         }
 
         container.innerHTML = items.map(item => {
-            // Check for multiple images
-            let mediaHTML = '';
-            const images = item.images || [];
-
-            if (images.length > 0) {
-                // Scrollable Images
-                const imagesHTML = images.map((img, idx) => `
-                    <img src="${convertGoogleDriveLink(img)}" loading="lazy" 
-                         onclick="event.stopPropagation(); openLightboxForStory('${item.docId}', ${idx})">
-                 `).join('');
-
-                // Add Thumbnail if not in images? (Usually thumbnail is cover, might be duplicate. Prefer using images array if exists)
-                // Or prepend thumbnail? "keep the image sizing as same as what we have currently"
-
-                mediaHTML = `
-                    <div class="scrolling-image-container">
-                        ${imagesHTML}
-                        ${images.length > 1 ? `<div class="scrolling-image-indicator">${images.length} Photos</div>` : ''}
-                    </div>`;
-            } else {
-                // Fallback to Single Thumbnail
-                const thumb = item.thumbnail || convertGoogleDriveLink(item.image);
-                mediaHTML = thumb
-                    ? `<div class="card-image"><img src="${thumb}" loading="lazy" alt="${item.title}"></div>`
-                    : `<div class="card-image"><div class="placeholder-thumb">${item.category.charAt(0)}</div></div>`;
+            // Revert to Single Thumbnail Only
+            let thumbUrl = item.thumbnail;
+            if (!thumbUrl && item.images && item.images.length > 0) {
+                // Handle legacy string URL vs new Object
+                const firstImg = item.images[0];
+                thumbUrl = typeof firstImg === 'string' ? firstImg : firstImg.url;
             }
+            // Fallback for google drive links
+            thumbUrl = convertGoogleDriveLink(thumbUrl);
+
+            const thumbHTML = thumbUrl
+                ? `<div class="card-image"><img src="${thumbUrl}" loading="lazy" alt="${item.title}"></div>`
+                : `<div class="card-image"><div class="placeholder-thumb">${item.category.charAt(0)}</div></div>`;
 
             return `
             <div class="personal-card" onclick="BlogApp.openReader('${item.docId}', this)">
-                ${mediaHTML}
+                ${thumbHTML}
                 <div class="card-content">
                     <span class="status-badge">${item.category}</span>
                     <h3>${item.title}</h3>
@@ -877,11 +864,19 @@ const BlogApp = {
         `;
 
         // Reader Gallery (Horizontal Scroll)
-        const images = item.images || [];
-        if (images.length > 0) {
-            const imagesHTML = images.map((img, idx) => `
-                <img src="${convertGoogleDriveLink(img)}" 
-                     onclick="openLightboxForStory('${item.docId}', ${idx})"
+        // FILTER: Only show images where inCarousel is NOT false (Default true)
+        let galleryImages = [];
+        if (item.images && Array.isArray(item.images)) {
+            galleryImages = item.images.filter(img => {
+                if (typeof img === 'string') return true;
+                return img.inCarousel !== false;
+            }).map(img => typeof img === 'string' ? img : img.url);
+        }
+
+        if (galleryImages.length > 0) {
+            const imagesHTML = galleryImages.map((url, idx) => `
+                <img src="${convertGoogleDriveLink(url)}" 
+                     onclick="openLightboxForStory('${item.docId}', ${idx}, true)"
                      style="min-width:100%; height:300px; object-fit:cover; cursor:zoom-in;">
              `).join('');
 
@@ -942,7 +937,15 @@ function openLightboxForStory(docId, index = 0) {
     }
 
     if (item && item.images && item.images.length > 0) {
-        openLightbox(item.images.map(convertGoogleDriveLink), index);
+        // Filter images just like the Reader does
+        const filteredImages = item.images.filter(img => {
+            if (typeof img === 'string') return true;
+            return img.inCarousel !== false;
+        }).map(img => convertGoogleDriveLink(typeof img === 'string' ? img : img.url));
+
+        if (filteredImages.length > 0) {
+            openLightbox(filteredImages, index);
+        }
     } else if (item && item.thumbnail) {
         openLightbox([item.thumbnail], 0);
     }
