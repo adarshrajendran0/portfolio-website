@@ -358,50 +358,36 @@ function openEducationDetail(docId) {
     // 1. Check for Nested Stories (Education Stories)
     const nestedStories = (dataCache.edu_stories || []).filter(s => s.parentId === docId);
 
+    let itemsToDisplay = [];
+    let title = item.degree; // Default Title
+
     if (nestedStories.length > 0) {
-        // --- MODE A: Nested Portfolio (Gallery) ---
-        // Reuse BlogApp to show these stories
-        BlogApp.init(nestedStories);
-        BlogApp.open();
-
-        // Optional: We could update the modal title to "${item.degree} Gallery" if BlogApp allows
-        return;
-    }
-
-    // --- MODE B: Standard Deep Dive (Reader) ---
-    const reader = document.getElementById('blogReader');
-    const content = document.getElementById('blogReaderContent');
-    if (!reader || !content) return;
-
-    reader.classList.add('active');
-
-    // Build Content
-    let html = `
-        <div class="reader-header">
-            <span class="reader-category">${item.year}</span>
-            <h1>${item.degree}</h1>
-            <h2 style="font-size:1.2rem; margin-top:0.5rem; color:var(--primary);">${item.institution}</h2>
-        </div>
-    `;
-
-    if (item.contentBlocks && item.contentBlocks.length > 0) {
-        html += '<div class="reader-body">';
-        item.contentBlocks.forEach(block => {
-            if (block.type === 'header') html += `<h3>${block.text}</h3>`;
-            if (block.type === 'paragraph') html += `<p>${block.text}</p>`;
-            if (block.type === 'quote') html += `<blockquote>${block.text}</blockquote>`;
-            if (block.type === 'image') html += `<img src="${convertGoogleDriveLink(block.text)}" class="block-img">`;
-        });
-        html += '</div>';
+        // --- MODE A: Cached Nested Stories ---
+        itemsToDisplay = nestedStories;
+        title = `${item.degree} - Stories`;
     } else {
-        html += `
-        <div class="reader-body">
-            <p><strong>Field of Study:</strong> ${item.field}</p>
-        </div>`;
+        // --- MODE B: Synthetic Story (The Education Item Itself) ---
+        // We create a "Story" object that mimics the Education Item properties
+        // This ensures the "List View" has something to show (1 Card), 
+        // and when clicked, it opens the Reader.
+        // Importantly, "Back" will now work because we are inside BlogApp structure.
+
+        itemsToDisplay = [{
+            docId: item.docId,      // Keep ID
+            title: item.degree,       // Title -> Title
+            category: item.year,      // Year -> Category (Badge)
+            summary: item.institution, // Institution -> Summary
+            contentBlocks: item.contentBlocks, // Content
+            thumbnail: null,          // Can set a default icon later if needed
+            // Extra metadata to help rendering if needed
+            isSynthetic: true
+        }];
     }
 
-    content.innerHTML = html;
-    reader.scrollTop = 0;
+    // Reuse BlogApp to show these stories
+    BlogApp.init(itemsToDisplay);
+    BlogApp.setTitle(title);
+    BlogApp.open();
 }
 function renderSkills() {
     const container = document.getElementById('skillsList'); if (!container) return;
@@ -681,6 +667,13 @@ function initializeHeroParallax() {
 // =========================================
 
 // 1. The Missing "Open" Function
+function openBeyondResume(trigger) {
+    // Explicitly Init with Personal Data
+    BlogApp.init(dataCache.personal || []);
+    BlogApp.setTitle("Beyond the Resume"); // Reset Title
+    BlogApp.open(trigger);
+}
+
 function openPersonalModal() {
     const modal = document.getElementById('personalModal');
     if (modal) {
@@ -817,11 +810,28 @@ const BlogApp = {
     activeCategory: 'All',
 
     init: function (data) {
+        this.reset(); // Crucial: Clear old state
         this.data = data || [];
+        // Only render if already visible (e.g. switching tabs logic)
         if (document.getElementById('blogModal') && document.getElementById('blogModal').classList.contains('active')) {
             this.renderTabs();
             this.renderGrid();
         }
+    },
+
+    setTitle: function (title) {
+        const el = document.getElementById('blogModalTitle');
+        if (el) el.innerText = title;
+    },
+
+    reset: function () {
+        this.data = [];
+        this.activeCategory = 'All';
+        // Clear Grid and Tabs
+        const grid = document.getElementById('blogGrid');
+        const tabs = document.getElementById('blogTabs');
+        if (grid) grid.innerHTML = '';
+        if (tabs) tabs.innerHTML = '';
     },
 
     open: function (trigger = null) {

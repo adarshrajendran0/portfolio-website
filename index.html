@@ -220,7 +220,7 @@
                     <span class="material-symbols-rounded" style="margin-left: auto;">arrow_forward</span>
                 </div>
 
-                <div class="references-trigger" id="beyondResumeTrigger" onclick="BlogApp.open(this)"
+                <div class="references-trigger" id="beyondResumeTrigger" onclick="openBeyondResume(this)"
                     style="flex: 1; margin-bottom: 0;">
                     <div class="trigger-icon">
                         <span class="material-symbols-rounded">person_book</span>
@@ -331,7 +331,7 @@
         <div class="modal-content blog-modal-wrapper">
             <!-- Modal Header -->
             <div class="modal-header">
-                <h2 class="section-title" style="margin:0; font-size:1.5rem;">Beyond the Resume</h2>
+                <h2 class="section-title" id="blogModalTitle" style="margin:0; font-size:1.5rem;">Beyond the Resume</h2>
                 <button class="close-btn" onclick="BlogApp.close()">
                     <span class="material-symbols-rounded">close</span>
                 </button>
